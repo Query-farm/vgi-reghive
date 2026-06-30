@@ -1,0 +1,79 @@
+# name: test/sql/scalars.test
+# group: [vgi_reghive]
+#
+# The scalar probes over a hive BLOB column: hive_key (one key as a struct),
+# hive_value (one value), key_info (metadata), and logs_applied (replay report).
+
+require-env VGI_REGHIVE_WORKER
+
+require-env VGI_REGHIVE_FIXTURES
+
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'reghive' AS reghive (TYPE vgi, LOCATION '${VGI_REGHIVE_WORKER}');
+
+statement ok
+SET search_path = 'reghive.main';
+
+# hive_key: pull one service key as a struct (2 inlined values).
+query II
+SELECT (hive_key(content, 'ControlSet001\Services\Schedule')).value_count,
+       len((hive_key(content, 'ControlSet001\Services\Schedule')).values)
+FROM read_blob('${VGI_REGHIVE_FIXTURES}/system_clean.hve');
+----
+2	2
+
+# hive_value: read one named value (REG_DWORD) — type, coerced data.
+query TT
+SELECT (hive_value(content, 'ControlSet001\Services\Schedule', 'Start')).value_type,
+       (hive_value(content, 'ControlSet001\Services\Schedule', 'Start')).value_data
+FROM read_blob('${VGI_REGHIVE_FIXTURES}/system_clean.hve');
+----
+REG_DWORD	3
+
+# hive_value: an absent value yields a NULL struct (no crash).
+query I
+SELECT (hive_value(content, 'ControlSet001\Services\Schedule', 'Nope')).value_data IS NULL
+FROM read_blob('${VGI_REGHIVE_FIXTURES}/system_clean.hve');
+----
+true
+
+# key_info: metadata only (no value materialization).
+query II
+SELECT (key_info(content, 'ControlSet001\Services\Schedule')).subkey_count,
+       (key_info(content, 'ControlSet001\Services\Schedule')).value_count
+FROM read_blob('${VGI_REGHIVE_FIXTURES}/system_clean.hve');
+----
+0	2
+
+# key_info: an absent key yields a NULL struct.
+query I
+SELECT (key_info(content, 'Does\Not\Exist')).value_count IS NULL
+FROM read_blob('${VGI_REGHIVE_FIXTURES}/system_clean.hve');
+----
+true
+
+# logs_applied: a dirty primary with no usable logs -> not applied, format none.
+query TT
+SELECT (logs_applied(content, ''::BLOB, ''::BLOB)).applied,
+       (logs_applied(content, ''::BLOB, ''::BLOB)).log_format
+FROM read_blob('${VGI_REGHIVE_FIXTURES}/system_dirty.hve');
+----
+false	none
+
+# The SAM V-structure bytes are exposed as opaque BLOB in value_raw, never
+# decoded to credential material (documented exposure, not interpretation).
+query TI
+SELECT (hive_value(content, 'SAM\Users\000001F4', 'V')).value_type,
+       octet_length((hive_value(content, 'SAM\Users\000001F4', 'V')).value_raw)
+FROM read_blob('${VGI_REGHIVE_FIXTURES}/sam.hve');
+----
+REG_BINARY	16
+
+statement ok
+USE memory;
+
+statement ok
+DETACH reghive;

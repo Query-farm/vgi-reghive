@@ -1,0 +1,60 @@
+# name: test/sql/basic.test
+# group: [vgi_reghive]
+#
+# Worker version, hive_info base-block summary, and well_formed validation.
+# Fixtures are the committed synthetic hives under tests/hives/ (see
+# crates/reghive-core/examples/gen_fixtures.rs); VGI_REGHIVE_FIXTURES is the
+# absolute path, set by ci/run-integration.sh.
+
+require-env VGI_REGHIVE_WORKER
+
+require-env VGI_REGHIVE_FIXTURES
+
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'reghive' AS reghive (TYPE vgi, LOCATION '${VGI_REGHIVE_WORKER}');
+
+statement ok
+SET search_path = 'reghive.main';
+
+# Worker version is a non-empty string.
+query I
+SELECT reghive_version() IS NOT NULL;
+----
+true
+
+# hive_info: a SOFTWARE hive, clean (sequence numbers match, checksum ok).
+query TI
+SELECT (hive_info(content)).hive_type, (hive_info(content)).is_dirty
+FROM read_blob('${VGI_REGHIVE_FIXTURES}/software.hve');
+----
+SOFTWARE	false
+
+# hive_info: the SYSTEM hive captured mid-write is dirty.
+query I
+SELECT (hive_info(content)).is_dirty
+FROM read_blob('${VGI_REGHIVE_FIXTURES}/system_dirty.hve');
+----
+true
+
+# well_formed: a real hive validates.
+query I
+SELECT (well_formed(content)).ok
+FROM read_blob('${VGI_REGHIVE_FIXTURES}/software.hve');
+----
+true
+
+# well_formed: a non-hive blob is rejected (ok=false) without crashing.
+query TT
+SELECT (well_formed(content)).ok, (well_formed(content)).kind
+FROM read_blob('${VGI_REGHIVE_FIXTURES}/garbage.bin');
+----
+false	bad-signature
+
+statement ok
+USE memory;
+
+statement ok
+DETACH reghive;

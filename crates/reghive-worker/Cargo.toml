@@ -1,0 +1,33 @@
+[package]
+name = "reghive-worker"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "VGI worker that parses Windows Registry hive files (regf) into typed key/value rows for DFIR — transaction-log replay and deleted-cell recovery over Apache Arrow in DuckDB"
+
+[[bin]]
+name = "reghive-worker"
+path = "src/main.rs"
+
+[lib]
+name = "reghive_worker"
+path = "src/lib.rs"
+
+[dependencies]
+reghive-core = { path = "../reghive-core" }
+vgi.workspace = true
+vgi-rpc.workspace = true
+arrow-array.workspace = true
+arrow-buffer.workspace = true
+arrow-schema.workspace = true
+notatin.workspace = true
+chrono.workspace = true
+glob = "0.3"
+log = "0.4"
+env_logger = "0.11"
+
+[dev-dependencies]
+proptest = "1"

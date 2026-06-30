@@ -1,0 +1,12 @@
+[tool.vgi-lint-check]
+# Metadata-quality gate for the reghive worker. CI builds the release binary and
+# runs `Query-farm/vgi-lint-check@v1` against it at `--fail-on info`; this config
+# is the local source of truth (`uvx --from vgi-lint-check vgi-lint lint
+# ./target/release/reghive-worker --fail-on info`).
+location = "./target/release/reghive-worker"
+select = ["ALL"]
+ignore = []
+fail_on = "info"
+
+[tool.vgi-lint-check.options]
+column_comment_min_ratio = 0.8

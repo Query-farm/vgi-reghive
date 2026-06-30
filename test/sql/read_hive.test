@@ -1,0 +1,89 @@
+# name: test/sql/read_hive.test
+# group: [vgi_reghive]
+#
+# read_hive() bulk scan: Run-key persistence triage, value coercion, deleted-cell
+# recovery, mode, the dirty-hive (no-logs) path, and a multi-file glob (which
+# exercises the file-glob cursor across the HTTP transport).
+
+require-env VGI_REGHIVE_WORKER
+
+require-env VGI_REGHIVE_FIXTURES
+
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'reghive' AS reghive (TYPE vgi, LOCATION '${VGI_REGHIVE_WORKER}');
+
+statement ok
+SET search_path = 'reghive.main';
+
+# 1. Run-key persistence triage with value coercion (one row per value).
+# REG_MULTI_SZ joins components with a newline; we render it with '|' here so the
+# value stays on one sqllogictest row.
+query TTT
+SELECT value_name, value_type, replace(value_data, chr(10), '|')
+FROM read_hive('${VGI_REGHIVE_FIXTURES}/software.hve')
+WHERE key_path = 'Software\Microsoft\Windows\CurrentVersion\Run'
+  AND value_name IN ('Updater', 'Start', 'Big', 'List', 'Blob')
+ORDER BY value_name;
+----
+Big	REG_QWORD	18838586676582
+Blob	REG_BINARY	deadbeef
+List	REG_MULTI_SZ	alpha|beta
+Start	REG_DWORD	2
+Updater	REG_SZ	C:\Windows\evil.exe
+
+# value_raw is the lossless source of truth; value_dword saves a cast.
+query I
+SELECT value_dword
+FROM read_hive('${VGI_REGHIVE_FIXTURES}/software.hve')
+WHERE value_name = 'Start';
+----
+2
+
+# 2. Deleted-cell recovery: the GhostKey orphan appears ONLY under is_deleted,
+# flagged deleted-orphan; a NOT is_deleted scan excludes it.
+query TT
+SELECT key_path, recovery
+FROM read_hive('${VGI_REGHIVE_FIXTURES}/software.hve')
+WHERE is_deleted AND key_path LIKE '$Deleted%'
+ORDER BY key_path;
+----
+$Deleted\GhostKey	deleted-orphan
+
+query I
+SELECT count(*)
+FROM read_hive('${VGI_REGHIVE_FIXTURES}/software.hve')
+WHERE NOT is_deleted AND key_path LIKE '%GhostKey%';
+----
+0
+
+# 3. mode := 'keys' emits one row per key (no value rows).
+query I
+SELECT count(*) FILTER (WHERE value_name IS NOT NULL)
+FROM read_hive('${VGI_REGHIVE_FIXTURES}/software.hve', mode := 'keys');
+----
+0
+
+# 4. A dirty hive with no sibling logs parses best-effort, tagged dirty-no-logs.
+query T
+SELECT DISTINCT recovery
+FROM read_hive('${VGI_REGHIVE_FIXTURES}/system_dirty.hve', apply_logs := false)
+WHERE recovery IS NOT NULL;
+----
+dirty-no-logs
+
+# 5. Multi-file glob: every fixture hive is scanned, attributed to its source
+# (this fan-out is what the HTTP-transport glob cursor resumes across batches).
+query I
+SELECT count(DISTINCT source) >= 4
+FROM read_hive('${VGI_REGHIVE_FIXTURES}/*.hve');
+----
+true
+
+statement ok
+USE memory;
+
+statement ok
+DETACH reghive;
