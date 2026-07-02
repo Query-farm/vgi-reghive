@@ -38,7 +38,7 @@ impl TableFunction for HiveSubtree {
              rows. Args: blob, key_path, apply_logs (default true), recover_deleted (default true).",
             "hive subtree, subtree, branch, scoped, run keys, services, amcache, registry, regf, \
              targeted, triage",
-            "table/hive_subtree.rs",
+            "Bulk parsing",
         );
         tags.push((
             "vgi.result_columns_md".into(),
@@ -54,7 +54,12 @@ impl TableFunction for HiveSubtree {
 
     fn argument_specs(&self) -> Vec<ArgSpec> {
         vec![
-            ArgSpec::const_arg("blob", 0, "blob", "The hive bytes (a BLOB)."),
+            ArgSpec::const_arg(
+                "blob",
+                0,
+                "blob",
+                "The raw contents of a registry hive file, e.g. from read_blob('SYSTEM').",
+            ),
             ArgSpec::const_arg(
                 "key_path",
                 1,

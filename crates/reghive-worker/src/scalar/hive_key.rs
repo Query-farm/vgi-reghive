@@ -84,7 +84,7 @@ impl ScalarFunction for HiveKey {
                 "Return one key as a struct with its values inlined (value_name, value_type, \
                  value_data, value_raw). NULL struct if the key is absent.",
                 "hive key, single key, get key, service, run key, struct, values, lookup",
-                "scalar/hive_key.rs",
+                "Targeted lookup",
             ),
             ..Default::default()
         }
@@ -92,7 +92,12 @@ impl ScalarFunction for HiveKey {
 
     fn argument_specs(&self) -> Vec<ArgSpec> {
         vec![
-            ArgSpec::column_typed("blob", 0, DataType::Binary, "The hive bytes (a BLOB)."),
+            ArgSpec::column_typed(
+                "blob",
+                0,
+                DataType::Binary,
+                "The raw contents of a registry hive file, e.g. from read_blob('NTUSER.DAT').",
+            ),
             ArgSpec::column_typed(
                 "key_path",
                 1,

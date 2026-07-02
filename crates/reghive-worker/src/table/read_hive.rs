@@ -57,7 +57,7 @@ impl TableFunction for ReadHive {
              read_blob() for cloud/s3 hives.",
             "read hive, registry, regf, NTUSER, SOFTWARE, SYSTEM, SAM, AmCache, DFIR, forensics, \
              persistence, run key, deleted, transaction log, recovery",
-            "table/read_hive.rs",
+            "Bulk parsing",
         );
         tags.push((
             "vgi.result_columns_md".into(),
@@ -76,9 +76,9 @@ impl TableFunction for ReadHive {
                 "glob_or_blob",
                 0,
                 "any",
-                "Either a local file glob (VARCHAR, e.g. '/cases/*/NTUSER.DAT' — matching files \
-                 are read in sorted order) or a single in-memory hive (BLOB). For cloud hives \
-                 (s3://, https://) fetch the bytes with read_blob(...) and pass the BLOB.",
+                "Either a local file glob (e.g. '/cases/*/NTUSER.DAT' — matching files are read \
+                 in sorted order) or a single in-memory hive read with read_blob. For cloud hives \
+                 (s3://, https://) fetch the bytes with read_blob(...) and pass those.",
             ),
             ArgSpec::const_arg(
                 "apply_logs",

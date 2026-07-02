@@ -22,9 +22,22 @@ pub fn keywords_json(keywords: &str) -> String {
     format!("[{}]", items.join(","))
 }
 
-/// Build the `vgi.agent_test_tasks` JSON value: a fixed suite of analyst tasks
-/// that `vgi-lint simulate` runs (`(name, prompt, reference_sql)` triples).
-pub fn agent_test_tasks_json(tasks: &[(&str, &str, &str)]) -> String {
+/// One analyst task for the `vgi.agent_test_tasks` suite that `vgi-lint simulate`
+/// (VGI920) grades: a `name`, a natural-language `prompt`, the canonical
+/// `reference_sql`, and two result-comparison relaxations — `unordered` (row
+/// order is not significant) and `ignore_column_names` (compare by values, not
+/// by output column names). Keep the reference deterministic (no wall clock,
+/// no external files) so the comparison is stable across runs.
+pub struct AgentTask {
+    pub name: &'static str,
+    pub prompt: &'static str,
+    pub reference_sql: &'static str,
+    pub unordered: bool,
+    pub ignore_column_names: bool,
+}
+
+/// Build the `vgi.agent_test_tasks` JSON value from a fixed suite of tasks.
+pub fn agent_test_tasks_json(tasks: &[AgentTask]) -> String {
     fn esc(s: &str) -> String {
         s.replace('\\', "\\\\")
             .replace('"', "\\\"")
@@ -32,31 +45,36 @@ pub fn agent_test_tasks_json(tasks: &[(&str, &str, &str)]) -> String {
     }
     let items: Vec<String> = tasks
         .iter()
-        .map(|(name, prompt, reference_sql)| {
+        .map(|t| {
             format!(
-                "{{\"name\":\"{}\",\"prompt\":\"{}\",\"reference_sql\":\"{}\"}}",
-                esc(name),
-                esc(prompt),
-                esc(reference_sql)
+                "{{\"name\":\"{}\",\"prompt\":\"{}\",\"reference_sql\":\"{}\",\
+                 \"unordered\":{},\"ignore_column_names\":{}}}",
+                esc(t.name),
+                esc(t.prompt),
+                esc(t.reference_sql),
+                t.unordered,
+                t.ignore_column_names,
             )
         })
         .collect();
     format!("[{}]", items.join(","))
 }
 
-/// Build the four standard per-object discovery/description tags. `_relative_path`
-/// is retained for call-site documentation but no longer emitted (VGI139).
+/// Build the standard per-object discovery/description tags, including the
+/// `vgi.category` (VGI413) that names one of the schema's `vgi.categories`.
+/// Per-object `vgi.source_url` is intentionally NOT emitted (VGI139).
 pub fn object_tags(
     title: &str,
     description_llm: &str,
     description_md: &str,
     keywords: &str,
-    _relative_path: &str,
+    category: &str,
 ) -> Vec<(String, String)> {
     vec![
         ("vgi.title".to_string(), title.to_string()),
         ("vgi.doc_llm".to_string(), description_llm.to_string()),
         ("vgi.doc_md".to_string(), description_md.to_string()),
         ("vgi.keywords".to_string(), keywords_json(keywords)),
+        ("vgi.category".to_string(), category.to_string()),
     ]
 }

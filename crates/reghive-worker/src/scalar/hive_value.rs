@@ -52,7 +52,7 @@ impl ScalarFunction for HiveValue {
                 "Return one named value as a struct (value_type, value_data, value_raw). Empty/NULL \
                  name selects the (Default) value; NULL struct if absent.",
                 "hive value, single value, get value, default value, value_data, value_raw, lookup",
-                "scalar/hive_value.rs",
+                "Targeted lookup",
             ),
             // A NULL value_name selects the (Default) value — receive it rather
             // than null-propagating.
@@ -63,7 +63,12 @@ impl ScalarFunction for HiveValue {
 
     fn argument_specs(&self) -> Vec<ArgSpec> {
         vec![
-            ArgSpec::column_typed("blob", 0, DataType::Binary, "The hive bytes (a BLOB)."),
+            ArgSpec::column_typed(
+                "blob",
+                0,
+                DataType::Binary,
+                "The raw contents of a registry hive file, e.g. from read_blob('NTUSER.DAT').",
+            ),
             ArgSpec::column_typed(
                 "key_path",
                 1,

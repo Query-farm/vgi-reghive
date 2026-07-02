@@ -62,7 +62,7 @@ impl ScalarFunction for HiveInfo {
                  last_written). Returns NULL for a non-hive blob.",
                 "hive info, base block, header, is_dirty, sequence number, version, recovery, \
                  triage, regf",
-                "scalar/hive_info.rs",
+                "Header & validation",
             ),
             ..Default::default()
         }
@@ -73,8 +73,8 @@ impl ScalarFunction for HiveInfo {
             "blob",
             0,
             DataType::Binary,
-            "The hive bytes (a BLOB), e.g. from read_blob('NTUSER.DAT'). NULL or a non-hive blob \
-             yields a NULL struct.",
+            "The raw contents of a registry hive file, e.g. from read_blob('NTUSER.DAT'). NULL or \
+             a non-hive input yields a NULL struct.",
         )]
     }
 

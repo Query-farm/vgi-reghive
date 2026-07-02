@@ -79,13 +79,12 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                  worker exposes hive structure faithfully (so those bytes appear in `value_raw`) \
                  but **never decodes credentials** — pair it with `vgi-mask`/`vgi-pii` to redact \
                  before results leave the analyst's session.\n\n\
-                 **Function surface.** `read_hive(glob_or_blob)` (bulk key/value rows), \
-                 `hive_subtree(blob, key_path)` (a scoped subtree), `hive_key(blob, key_path)` \
-                 (one key as a struct), `hive_value(blob, key_path, value_name)` (one value), \
-                 `key_info` / `hive_info` / `well_formed` (metadata + validation probes), \
-                 `logs_applied` (transaction-log replay report), and `reghive_version()`. The \
-                 worker opens no socket and makes no calls — zero egress, safe for air-gapped \
-                 evidence stores.\n\n\
+                 **How you work with it.** Point it at a directory glob of collected hives for \
+                 bulk triage, or hand it a single in-memory hive to drill into one subtree, key, \
+                 or value; header and validity probes tell you up front whether a hive is dirty \
+                 and needs transaction-log recovery. The worker opens no socket and makes no \
+                 outbound calls — zero egress, safe for air-gapped evidence stores. List the \
+                 schema to discover the available functions and their signatures.\n\n\
                  Format references: the [msuhanov regf \
                  specification](https://github.com/msuhanov/regf/blob/master/Windows%20registry%20file%20format%20specification.md) \
                  and Google Project Zero's \"Windows Registry Adventure #5: regf\"."
@@ -94,18 +93,44 @@ fn catalog_metadata(name: &str) -> CatalogModel {
             (
                 "vgi.agent_test_tasks".to_string(),
                 meta::agent_test_tasks_json(&[
-                    (
-                        "worker_version",
-                        "What version of the reghive worker is running? Return one row with one \
-                         column named version.",
-                        "SELECT reghive.main.reghive_version() AS version",
-                    ),
-                    (
-                        "validate_non_hive",
-                        "Is the text 'definitely not a hive' a valid registry hive? Return one \
-                         column named ok.",
-                        "SELECT (reghive.main.well_formed('definitely not a hive'::BLOB)).ok AS ok",
-                    ),
+                    meta::AgentTask {
+                        name: "worker_version",
+                        prompt: "What version of the reghive worker is running? Return one row \
+                                 with one column named version.",
+                        reference_sql: "SELECT reghive.main.reghive_version() AS version",
+                        unordered: true,
+                        ignore_column_names: true,
+                    },
+                    meta::AgentTask {
+                        name: "validate_non_hive",
+                        prompt: "Is the text 'definitely not a hive' a valid registry hive? \
+                                 Return one boolean column named ok.",
+                        reference_sql:
+                            "SELECT (reghive.main.well_formed('definitely not a hive'::BLOB)).ok \
+                             AS ok",
+                        unordered: true,
+                        ignore_column_names: true,
+                    },
+                    meta::AgentTask {
+                        name: "non_hive_header_is_null",
+                        prompt: "For the bytes 'not a registry hive', does the base-block header \
+                                 summary come back as NULL (i.e. it is not a parseable hive)? \
+                                 Return one boolean column named is_null.",
+                        reference_sql:
+                            "SELECT reghive.main.hive_info('not a registry hive'::BLOB) IS NULL \
+                             AS is_null",
+                        unordered: true,
+                        ignore_column_names: true,
+                    },
+                    meta::AgentTask {
+                        name: "well_formed_kind_of_non_hive",
+                        prompt: "Classify why the bytes 'nope' are not a valid registry hive — \
+                                 return the well-formedness kind label in one column named kind.",
+                        reference_sql:
+                            "SELECT (reghive.main.well_formed('nope'::BLOB)).kind AS kind",
+                        unordered: true,
+                        ignore_column_names: true,
+                    },
                 ]),
             ),
             ("vgi.author".to_string(), "Query.Farm".to_string()),
@@ -132,12 +157,20 @@ fn catalog_metadata(name: &str) -> CatalogModel {
         schemas: vec![CatSchema {
             name: "main".to_string(),
             comment: Some(
-                "Registry-hive parsing functions: read_hive, hive_subtree, hive_key, hive_value, \
-                 key_info, hive_info, well_formed, logs_applied."
+                "Registry-hive parsing functions for DFIR triage: bulk directory scans, scoped \
+                 subtree and single key/value lookups, header and validity probes, and \
+                 transaction-log replay reporting."
                     .to_string(),
             ),
             tags: vec![
                 ("vgi.title".to_string(), "Reghive — main".to_string()),
+                // VGI413: ordered category registry. Each function declares a
+                // `vgi.category` (via meta::object_tags) naming one of these.
+                (
+                    "vgi.categories".to_string(),
+                    r#"[{"name":"Bulk parsing","description":"Scan whole hives — a directory glob or a single blob — into typed key/value rows for triage."},{"name":"Targeted lookup","description":"Pull one key or value (or a key's metadata) from a hive without scanning the whole tree."},{"name":"Header & validation","description":"Read a hive's base-block header and confirm the bytes are a well-formed regf hive."},{"name":"Transaction logs","description":"Report on .LOG1/.LOG2 transaction-log replay of a dirty hive."},{"name":"Utility","description":"Worker introspection such as the version string."}]"#
+                        .to_string(),
+                ),
                 (
                     "vgi.keywords".to_string(),
                     meta::keywords_json(
@@ -158,10 +191,11 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                 ),
                 (
                     "vgi.doc_md".to_string(),
-                    "The single schema for the `reghive` worker. It holds the registry-hive \
-                     parsing functions — `read_hive`, `hive_subtree`, `hive_key`, `hive_value`, \
-                     `key_info`, `hive_info`, `well_formed`, `logs_applied`, `reghive_version` — \
-                     that turn regf hive files into typed key/value rows for forensic triage."
+                    "The single schema for the `reghive` worker. It groups the registry-hive \
+                     parsing functions that turn regf hive files into typed key/value rows for \
+                     forensic triage — bulk directory scans, scoped subtree and single key/value \
+                     lookups, header and validity probes, and transaction-log replay reporting. \
+                     List the schema to see each function and its signature."
                         .to_string(),
                 ),
                 (

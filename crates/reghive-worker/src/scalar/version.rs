@@ -33,7 +33,7 @@ impl ScalarFunction for ReghiveVersion {
                      Useful for diagnostics and confirming which build is attached.",
                     "Return the reghive worker version string, e.g. `reghive_version()` -> '0.1.0'.",
                     "version, build version, reghive_version, diagnostics, worker version, semver",
-                    "scalar/version.rs",
+                    "Utility",
                 );
                 // A guaranteed-runnable, self-contained example (VGI509) so agents
                 // have a verified example to learn from. Two fully self-contained

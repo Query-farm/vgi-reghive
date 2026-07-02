@@ -58,7 +58,7 @@ impl ScalarFunction for KeyInfo {
                  is_deleted) without reading its values. NULL struct if the key is absent.",
                 "key info, key metadata, last write, subkey count, value count, timeline, pivot, \
                  last modified",
-                "scalar/key_info.rs",
+                "Targeted lookup",
             ),
             ..Default::default()
         }
@@ -66,7 +66,12 @@ impl ScalarFunction for KeyInfo {
 
     fn argument_specs(&self) -> Vec<ArgSpec> {
         vec![
-            ArgSpec::column_typed("blob", 0, DataType::Binary, "The hive bytes (a BLOB)."),
+            ArgSpec::column_typed(
+                "blob",
+                0,
+                DataType::Binary,
+                "The raw contents of a registry hive file, e.g. from read_blob('NTUSER.DAT').",
+            ),
             ArgSpec::column_typed(
                 "key_path",
                 1,

@@ -82,7 +82,7 @@ impl ScalarFunction for LogsApplied {
                  entries_replayed, dirty_pages, became_clean, log_format.",
                 "logs applied, transaction log, LOG1, LOG2, replay, recovery, dirty hive, became \
                  clean, sequence number, HvLE",
-                "scalar/logs_applied.rs",
+                "Transaction logs",
             ),
             // NULL .LOG args mean "log not available" — receive them, do not
             // null-propagate the whole result.
@@ -97,7 +97,7 @@ impl ScalarFunction for LogsApplied {
                 "blob",
                 0,
                 DataType::Binary,
-                "The dirty primary hive bytes (a BLOB).",
+                "The dirty primary hive contents, captured before transaction-log replay.",
             ),
             ArgSpec::column_typed(
                 "log1",

@@ -64,7 +64,7 @@ impl ScalarFunction for WellFormed {
                  Never panics on hostile input.",
                 "well formed, validate, is hive, regf, bad signature, bad checksum, truncated, \
                  corrupt, sanity check",
-                "scalar/well_formed.rs",
+                "Header & validation",
             ),
             ..Default::default()
         }
@@ -75,8 +75,8 @@ impl ScalarFunction for WellFormed {
             "blob",
             0,
             DataType::Binary,
-            "The bytes to validate (a BLOB). NULL yields a NULL struct; any non-hive bytes yield \
-             ok=false with a kind tag rather than an error.",
+            "The candidate hive contents to validate, e.g. from read_blob('SYSTEM'). NULL yields a \
+             NULL struct; any non-hive bytes yield ok=false with a kind tag rather than an error.",
         )]
     }
 
