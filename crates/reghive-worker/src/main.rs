@@ -191,11 +191,22 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                 ),
                 (
                     "vgi.doc_md".to_string(),
-                    "The single schema for the `reghive` worker. It groups the registry-hive \
-                     parsing functions that turn regf hive files into typed key/value rows for \
-                     forensic triage — bulk directory scans, scoped subtree and single key/value \
-                     lookups, header and validity probes, and transaction-log replay reporting. \
-                     List the schema to see each function and its signature."
+                    "## Registry-hive parsing for DFIR\n\n\
+                     The single schema of the `reghive` worker. It turns offline Windows \
+                     Registry hive files (`NTUSER.DAT`, `SYSTEM`, `SOFTWARE`, `SAM`, …) into \
+                     typed key/value rows so a hive on disk can be queried as SQL.\n\n\
+                     Every read is offline and best-effort: dirty hives still parse, deleted \
+                     cells can be recovered and labelled, and sensitive bytes are preserved raw \
+                     and never decoded. The functions group into a few kinds of work:\n\n\
+                     - **Bulk parsing** — scan a whole hive (a directory glob, or a single \
+                     blob) into rows for triage.\n\
+                     - **Targeted lookup** — pull one key or value, or a key's metadata, \
+                     without walking the whole tree.\n\
+                     - **Header & validation** — read the base-block header and confirm the \
+                     bytes are a well-formed regf hive.\n\
+                     - **Transaction logs** — report on `.LOG1`/`.LOG2` replay of a dirty hive.\n\n\
+                     Use it whenever you have a registry hive on disk and need its contents as \
+                     rows; list the schema to see each function and its signature."
                         .to_string(),
                 ),
                 (
