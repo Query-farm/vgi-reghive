@@ -19,7 +19,7 @@
 //! are owned by `notatin` (Apache-2.0); this worker owns the normalized §5
 //! schema, the glob cursor, and the diagnostics discipline.
 
-use reghive_worker::{meta, scalar, table};
+use reghive_worker::{meta, sample, scalar, table};
 use vgi::catalog::{CatSchema, CatalogModel};
 use vgi::Worker;
 
@@ -131,6 +131,92 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                         unordered: true,
                         ignore_column_names: true,
                     },
+                    // Browse the curated reference view.
+                    meta::AgentTask {
+                        name: "persistence_reference_keys",
+                        prompt: "The worker ships a reference list of well-known forensic \
+                                 registry keys. How many of them are in the 'Persistence' \
+                                 category? Return the count in one column named n.",
+                        reference_sql: "SELECT count(*) AS n FROM reghive.main.forensic_keys \
+                                        WHERE category = 'Persistence'",
+                        unordered: true,
+                        ignore_column_names: true,
+                    },
+                    meta::AgentTask {
+                        name: "reference_key_for_run",
+                        prompt: "In the worker's reference list of well-known forensic registry \
+                                 keys, which MITRE ATT&CK technique is mapped to the classic \
+                                 CurrentVersion\\Run autostart key? Return one column named \
+                                 mitre_technique.",
+                        reference_sql: "SELECT mitre_technique FROM reghive.main.forensic_keys \
+                                        WHERE key_path = \
+                                        'Software\\Microsoft\\Windows\\CurrentVersion\\Run'",
+                        unordered: true,
+                        ignore_column_names: true,
+                    },
+                    // Exercise the parsers' robustness contract: non-registry input
+                    // must yield an empty/NULL result, never an error. Each task
+                    // references a distinct object so every function is covered.
+                    meta::AgentTask {
+                        name: "read_hive_non_hive_empty",
+                        prompt: "The bulk hive reader must tolerate non-registry input without \
+                                 error. When you read the bytes 'not a hive' as a hive, how many \
+                                 rows come back? Return the count in one column named n.",
+                        reference_sql: "SELECT count(*) AS n FROM \
+                                        reghive.main.read_hive('not a hive'::BLOB)",
+                        unordered: true,
+                        ignore_column_names: true,
+                    },
+                    meta::AgentTask {
+                        name: "hive_subtree_non_hive_empty",
+                        prompt: "Reading the subtree 'Software' out of the non-registry bytes \
+                                 'not a hive' must return no rows rather than failing. How many \
+                                 rows come back? Return the count in one column named n.",
+                        reference_sql: "SELECT count(*) AS n FROM \
+                                        reghive.main.hive_subtree('not a hive'::BLOB, 'Software')",
+                        unordered: true,
+                        ignore_column_names: true,
+                    },
+                    meta::AgentTask {
+                        name: "hive_key_non_hive_null",
+                        prompt: "Looking up the key 'Software' in the non-registry bytes 'nope' \
+                                 must yield NULL, not an error. Does it come back NULL? Return one \
+                                 boolean column named is_null.",
+                        reference_sql: "SELECT reghive.main.hive_key('nope'::BLOB, 'Software') \
+                                        IS NULL AS is_null",
+                        unordered: true,
+                        ignore_column_names: true,
+                    },
+                    meta::AgentTask {
+                        name: "hive_value_non_hive_null",
+                        prompt: "Reading the value 'Updater' under key 'Run' from the \
+                                 non-registry bytes 'nope' must yield NULL, not an error. Does it \
+                                 come back NULL? Return one boolean column named is_null.",
+                        reference_sql: "SELECT reghive.main.hive_value('nope'::BLOB, 'Run', \
+                                        'Updater') IS NULL AS is_null",
+                        unordered: true,
+                        ignore_column_names: true,
+                    },
+                    meta::AgentTask {
+                        name: "key_info_non_hive_null",
+                        prompt: "Asking for the metadata of key 'Software' in the non-registry \
+                                 bytes 'nope' must yield NULL, not an error. Does it come back \
+                                 NULL? Return one boolean column named is_null.",
+                        reference_sql: "SELECT reghive.main.key_info('nope'::BLOB, 'Software') \
+                                        IS NULL AS is_null",
+                        unordered: true,
+                        ignore_column_names: true,
+                    },
+                    meta::AgentTask {
+                        name: "logs_applied_non_hive_null",
+                        prompt: "Inspecting a transaction-log replay for the non-registry bytes \
+                                 'nope' (with no logs supplied) must yield NULL, not an error. \
+                                 Does it come back NULL? Return one boolean column named is_null.",
+                        reference_sql: "SELECT reghive.main.logs_applied('nope'::BLOB, NULL, \
+                                        NULL) IS NULL AS is_null",
+                        unordered: true,
+                        ignore_column_names: true,
+                    },
                 ]),
             ),
             ("vgi.author".to_string(), "Query.Farm".to_string()),
@@ -168,7 +254,7 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                 // `vgi.category` (via meta::object_tags) naming one of these.
                 (
                     "vgi.categories".to_string(),
-                    r#"[{"name":"Bulk parsing","description":"Scan whole hives — a directory glob or a single blob — into typed key/value rows for triage."},{"name":"Targeted lookup","description":"Pull one key or value (or a key's metadata) from a hive without scanning the whole tree."},{"name":"Header & validation","description":"Read a hive's base-block header and confirm the bytes are a well-formed regf hive."},{"name":"Transaction logs","description":"Report on .LOG1/.LOG2 transaction-log replay of a dirty hive."},{"name":"Utility","description":"Worker introspection such as the version string."}]"#
+                    r#"[{"name":"Bulk parsing","description":"Scan whole hives — a directory glob or a single blob — into typed key/value rows for triage."},{"name":"Targeted lookup","description":"Pull one key or value (or a key's metadata) from a hive without scanning the whole tree."},{"name":"Header & validation","description":"Read a hive's base-block header and confirm the bytes are a well-formed regf hive."},{"name":"Transaction logs","description":"Report on .LOG1/.LOG2 transaction-log replay of a dirty hive."},{"name":"Reference","description":"Curated browsable reference data, such as the well-known forensic registry keys to triage."},{"name":"Utility","description":"Worker introspection such as the version string."}]"#
                         .to_string(),
                 ),
                 (
@@ -217,11 +303,16 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                      SELECT reghive.main.hive_key(content, 'ControlSet001\\Services\\Schedule') \
                      FROM read_blob('SYSTEM');\n\
                      SELECT reghive.main.hive_info(content) FROM read_blob('NTUSER.DAT');\n\
+                     SELECT key_path, mitre_technique FROM reghive.main.forensic_keys WHERE \
+                     category = 'Persistence';\n\
                      SELECT reghive.main.reghive_version();"
                         .to_string(),
                 ),
             ],
-            views: Vec::new(),
+            // A browsable, VALUES-backed reference view: something an agent can
+            // scan (no file, no credential) to learn which key paths to triage
+            // before it has a hive in hand.
+            views: vec![sample::forensic_keys_view()],
             macros: Vec::new(),
             tables: Vec::new(),
         }],

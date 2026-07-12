@@ -7,6 +7,7 @@
 pub mod arrow_map;
 pub mod hive;
 pub mod meta;
+pub mod sample;
 pub mod scalar;
 pub mod table;
 

@@ -6,7 +6,7 @@
 use arrow_array::RecordBatch;
 use vgi::arguments::Arguments;
 use vgi::table_function::{TableFunction, TableProducer};
-use vgi::{ArgSpec, BindParams, BindResponse, FunctionMetadata, ProcessParams};
+use vgi::{ArgSpec, BindParams, BindResponse, FunctionExample, FunctionMetadata, ProcessParams};
 use vgi_rpc::{OutputCollector, Result, RpcError};
 
 use crate::arrow_map::{row_schema, RowBatchBuilder};
@@ -41,12 +41,28 @@ impl TableFunction for HiveSubtree {
             "Bulk parsing",
         );
         tags.push((
-            "vgi.result_columns_md".into(),
-            common::RESULT_COLUMNS_MD.into(),
+            "vgi.result_columns_schema".into(),
+            common::RESULT_COLUMNS_SCHEMA.into(),
         ));
+        // Self-contained example: scope the scan to the Run key of the committed
+        // synthetic SOFTWARE hive (inlined as a BLOB literal, so it binds AND
+        // returns rows under `vgi-lint --execute`).
+        let demo = crate::sample::demo_hive_hex();
+        let run = crate::sample::DEMO_RUN_KEY_PATH;
         FunctionMetadata {
             description: "Read one subtree of a hive BLOB (rooted at key_path) into typed rows"
                 .into(),
+            examples: vec![FunctionExample {
+                sql: format!(
+                    "SELECT key_path, value_name, value_data \
+                     FROM reghive.main.hive_subtree(unhex('{demo}')::BLOB, '{run}') \
+                     ORDER BY value_name"
+                ),
+                description: "Read just the Run persistence branch of a hive without \
+                              materializing the whole tree."
+                    .into(),
+                expected_output: None,
+            }],
             tags,
             ..Default::default()
         }

@@ -13,7 +13,7 @@ use arrow_schema::DataType;
 use reghive_core::cursor::HiveGlobCursor;
 use vgi::arguments::Arguments;
 use vgi::table_function::{TableFunction, TableProducer};
-use vgi::{ArgSpec, BindParams, BindResponse, FunctionMetadata, ProcessParams};
+use vgi::{ArgSpec, BindParams, BindResponse, FunctionExample, FunctionMetadata, ProcessParams};
 use vgi_rpc::{OutputCollector, Result, RpcError};
 
 use crate::arrow_map::{row_schema, RowBatchBuilder};
@@ -60,11 +60,27 @@ impl TableFunction for ReadHive {
             "Bulk parsing",
         );
         tags.push((
-            "vgi.result_columns_md".into(),
-            common::RESULT_COLUMNS_MD.into(),
+            "vgi.result_columns_schema".into(),
+            common::RESULT_COLUMNS_SCHEMA.into(),
         ));
+        // A fully self-contained example: the committed synthetic SOFTWARE hive
+        // (with a classic Run-key persistence value) inlined as a BLOB literal, so
+        // it binds AND returns rows under `vgi-lint --execute`. Table functions
+        // bind literal args only, hence `unhex(...)` rather than a column.
+        let demo = crate::sample::demo_hive_hex();
         FunctionMetadata {
             description: "Read regf registry hives (glob or BLOB) into typed key/value rows".into(),
+            examples: vec![FunctionExample {
+                sql: format!(
+                    "SELECT key_path, value_name, value_type, value_data \
+                     FROM reghive.main.read_hive(unhex('{demo}')::BLOB) \
+                     WHERE value_name = 'Updater'"
+                ),
+                description: "Scan a whole hive BLOB and pull the Run-key persistence value \
+                              (Updater) it plants — the bread-and-butter triage query."
+                    .into(),
+                expected_output: None,
+            }],
             tags,
             ..Default::default()
         }
