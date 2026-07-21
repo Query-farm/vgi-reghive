@@ -29,13 +29,14 @@ impl TableFunction for HiveSubtree {
     fn metadata(&self) -> FunctionMetadata {
         let mut tags = crate::meta::object_tags(
             "Read Hive Subtree",
-            "Scan only the subtree of a hive BLOB rooted at a given key_path (recursive) into the \
-             same typed key/value rows as read_hive. The targeted-triage surface for when you know \
-             where you're looking — a Run-key branch, a Services subtree, or an AmCache \
+            "Scan only the subtree of a hive `BLOB` rooted at a given key_path (recursive) into \
+             the same typed key/value rows as read_hive. The targeted-triage surface for when you \
+             know where you're looking — a Run-key branch, a Services subtree, or an AmCache \
              InventoryApplicationFile node — without materializing a whole large hive. By default \
              replays transaction logs (apply_logs) and recovers deleted cells (recover_deleted).",
-            "Scan one subtree of a hive BLOB (rooted at key_path, recursive) into the §5 key/value \
-             rows. Args: blob, key_path, apply_logs (default true), recover_deleted (default true).",
+            "Scan one subtree of a hive `BLOB` (rooted at key_path, recursive) into the §5 \
+             key/value rows. Args: blob, key_path, apply_logs (default true), recover_deleted \
+             (default true).",
             "hive subtree, subtree, branch, scoped, run keys, services, amcache, registry, regf, \
              targeted, triage",
             "Bulk parsing",
@@ -49,18 +50,24 @@ impl TableFunction for HiveSubtree {
         // returns rows under `vgi-lint --execute`).
         let demo = crate::sample::demo_hive_hex();
         let run = crate::sample::DEMO_RUN_KEY_PATH;
+        let example_sql = format!(
+            "SELECT key_path, value_name, value_data \
+             FROM reghive.main.hive_subtree(unhex('{demo}')::BLOB, '{run}') \
+             ORDER BY value_name"
+        );
+        let example_desc = "Read just the Run persistence branch of a hive without materializing \
+                            the whole tree.";
+        // VGI515: described-example carrier for the native example below.
+        tags.push((
+            "vgi.example_queries".into(),
+            crate::meta::example_queries_json(&[(example_desc, example_sql.as_str())]),
+        ));
         FunctionMetadata {
             description: "Read one subtree of a hive BLOB (rooted at key_path) into typed rows"
                 .into(),
             examples: vec![FunctionExample {
-                sql: format!(
-                    "SELECT key_path, value_name, value_data \
-                     FROM reghive.main.hive_subtree(unhex('{demo}')::BLOB, '{run}') \
-                     ORDER BY value_name"
-                ),
-                description: "Read just the Run persistence branch of a hive without \
-                              materializing the whole tree."
-                    .into(),
+                sql: example_sql.clone(),
+                description: example_desc.into(),
                 expected_output: None,
             }],
             tags,

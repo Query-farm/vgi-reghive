@@ -43,18 +43,19 @@ impl TableFunction for ReadHive {
             "Read Registry Hives",
             "Scan Windows Registry hive files (regf: SYSTEM, SOFTWARE, NTUSER.DAT, SAM, SECURITY, \
              UsrClass.dat, AmCache.hve) into typed key/value rows for DFIR. The first argument is \
-             either a local file glob (VARCHAR, e.g. '/cases/*/NTUSER.DAT') or a single in-memory \
-             hive (BLOB, e.g. from read_blob('s3://...')). By default it replays sibling \
-             .LOG1/.LOG2 transaction logs to recover a dirty hive (apply_logs) and reconstructs \
-             keys/values from unallocated cells (recover_deleted, flagged is_deleted). The named \
-             `mode` argument is 'values' (one row per value, default), 'keys' (one row per key), \
-             or 'all' (both). Emits full key paths, value name/type/data, the lossless value_raw \
-             bytes, per-key last-write timestamps, and recovery/diagnostics tags. Join it to IOC, \
-             CVE, YARA, and Sigma workers for fleet-scale registry triage.",
-            "Scan regf registry hives into typed key/value rows. Arg 1 is a local glob (VARCHAR) \
-             or a hive BLOB. Named args: apply_logs (replay .LOG1/.LOG2, default true), \
-             recover_deleted (default true), mode ('values'/'keys'/'all'). Pass a BLOB from \
-             read_blob() for cloud/s3 hives.",
+             either a local file glob (`VARCHAR`, e.g. '/cases/*/NTUSER.DAT') or a single \
+             in-memory hive (`BLOB`, e.g. from read_blob('s3://...')). By default it replays \
+             sibling .LOG1/.LOG2 transaction logs to recover a dirty hive (apply_logs) and \
+             reconstructs keys/values from unallocated cells (recover_deleted, flagged \
+             is_deleted). The named `mode` argument is 'values' (one row per value, default), \
+             'keys' (one row per key), or 'all' (both). Emits full key paths, value \
+             name/type/data, the lossless value_raw bytes, per-key last-write timestamps, and \
+             recovery/diagnostics tags. Join it to IOC, CVE, YARA, and Sigma workers for \
+             fleet-scale registry triage.",
+            "Scan regf registry hives into typed key/value rows. Arg 1 is a local glob \
+             (`VARCHAR`) or a hive `BLOB`. Named args: apply_logs (replay .LOG1/.LOG2, default \
+             true), recover_deleted (default true), mode ('values'/'keys'/'all'). Pass a `BLOB` \
+             from read_blob() for cloud/s3 hives.",
             "read hive, registry, regf, NTUSER, SOFTWARE, SYSTEM, SAM, AmCache, DFIR, forensics, \
              persistence, run key, deleted, transaction log, recovery",
             "Bulk parsing",
@@ -68,17 +69,23 @@ impl TableFunction for ReadHive {
         // it binds AND returns rows under `vgi-lint --execute`. Table functions
         // bind literal args only, hence `unhex(...)` rather than a column.
         let demo = crate::sample::demo_hive_hex();
+        let example_sql = format!(
+            "SELECT key_path, value_name, value_type, value_data \
+             FROM reghive.main.read_hive(unhex('{demo}')::BLOB) \
+             WHERE value_name = 'Updater'"
+        );
+        let example_desc = "Scan a whole hive and pull the Run-key persistence value (Updater) it \
+                            plants — the bread-and-butter triage query.";
+        // VGI515: described-example carrier for the native example below.
+        tags.push((
+            "vgi.example_queries".into(),
+            crate::meta::example_queries_json(&[(example_desc, example_sql.as_str())]),
+        ));
         FunctionMetadata {
             description: "Read regf registry hives (glob or BLOB) into typed key/value rows".into(),
             examples: vec![FunctionExample {
-                sql: format!(
-                    "SELECT key_path, value_name, value_type, value_data \
-                     FROM reghive.main.read_hive(unhex('{demo}')::BLOB) \
-                     WHERE value_name = 'Updater'"
-                ),
-                description: "Scan a whole hive BLOB and pull the Run-key persistence value \
-                              (Updater) it plants — the bread-and-butter triage query."
-                    .into(),
+                sql: example_sql.clone(),
+                description: example_desc.into(),
                 expected_output: None,
             }],
             tags,

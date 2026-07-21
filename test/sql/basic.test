@@ -1,7 +1,7 @@
 # name: test/sql/basic.test
 # group: [vgi_reghive]
 #
-# Worker version, hive_info base-block summary, and well_formed validation.
+# hive_info base-block summary and well_formed validation.
 # Fixtures are the committed synthetic hives under tests/hives/ (see
 # crates/reghive-core/examples/gen_fixtures.rs); VGI_REGHIVE_FIXTURES is the
 # absolute path, set by ci/run-integration.sh.
@@ -18,12 +18,6 @@ ATTACH 'reghive' AS reghive (TYPE vgi, LOCATION '${VGI_REGHIVE_WORKER}');
 
 statement ok
 SET search_path = 'reghive.main';
-
-# Worker version is a non-empty string.
-query I
-SELECT reghive_version() IS NOT NULL;
-----
-true
 
 # hive_info: a SOFTWARE hive, clean (sequence numbers match, checksum ok).
 query TI

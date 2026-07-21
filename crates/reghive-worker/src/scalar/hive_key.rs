@@ -74,18 +74,30 @@ impl ScalarFunction for HiveKey {
                 description: "Look up a key as a struct (NULL struct for a non-hive blob).".into(),
                 expected_output: None,
             }],
-            tags: crate::meta::object_tags(
-                "Single Key as Struct",
-                "Return exactly one registry key from a hive BLOB as a struct: its key_path, \
-                 last-write UTC timestamp, class name, subkey/value counts, deleted flag, and a \
-                 LIST of its values (each a struct of value_name, value_type, value_data, and the \
-                 lossless value_raw bytes). Use it to pull a single service, Run key, or settings \
-                 node without scanning the whole hive. Returns a NULL struct if the key is absent.",
-                "Return one key as a struct with its values inlined (value_name, value_type, \
-                 value_data, value_raw). NULL struct if the key is absent.",
-                "hive key, single key, get key, service, run key, struct, values, lookup",
-                "Targeted lookup",
-            ),
+            tags: {
+                let mut tags = crate::meta::object_tags(
+                    "Single Key as Struct",
+                    "Return exactly one registry key from a hive `BLOB` as a struct: its key_path, \
+                     last-write UTC timestamp, class name, subkey/value counts, deleted flag, and \
+                     a `LIST` of its values (each a struct of value_name, value_type, value_data, \
+                     and the lossless value_raw bytes). Use it to pull a single service, Run key, \
+                     or settings node without scanning the whole hive. Returns a NULL struct if \
+                     the key is absent.",
+                    "Return one key as a struct with its values inlined (value_name, value_type, \
+                     value_data, value_raw). NULL struct if the key is absent.",
+                    "hive key, single key, get key, service, run key, struct, values, lookup",
+                    "Targeted lookup",
+                );
+                // VGI515: described-example carrier for the native example above.
+                tags.push((
+                    "vgi.example_queries".to_string(),
+                    crate::meta::example_queries_json(&[(
+                        "Look up a key as a struct (NULL struct for a non-hive blob).",
+                        "SELECT reghive.main.hive_key('regf'::BLOB, 'ControlSet001\\Services');",
+                    )]),
+                ));
+                tags
+            },
             ..Default::default()
         }
     }

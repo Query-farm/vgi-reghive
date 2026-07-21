@@ -60,6 +60,32 @@ pub fn agent_test_tasks_json(tasks: &[AgentTask]) -> String {
     format!("[{}]", items.join(","))
 }
 
+/// Build a `vgi.example_queries` described-example list — the JSON array of
+/// `{"description": ..., "sql": ...}` objects the linter (VGI515) requires so
+/// every example carries a human-readable description. The native
+/// `duckdb_functions().examples` carrier drops descriptions, so a function that
+/// wants described examples must publish them through this tag; when the same
+/// SQL also appears as a native `FunctionExample`, the linter dedups the two
+/// (whitespace/case-insensitive) into the described one.
+pub fn example_queries_json(examples: &[(&str, &str)]) -> String {
+    fn esc(s: &str) -> String {
+        s.replace('\\', "\\\\")
+            .replace('"', "\\\"")
+            .replace('\n', "\\n")
+    }
+    let items: Vec<String> = examples
+        .iter()
+        .map(|(desc, sql)| {
+            format!(
+                "{{\"description\":\"{}\",\"sql\":\"{}\"}}",
+                esc(desc),
+                esc(sql)
+            )
+        })
+        .collect();
+    format!("[{}]", items.join(","))
+}
+
 /// Build the standard per-object discovery/description tags, including the
 /// `vgi.category` (VGI413) that names one of the schema's `vgi.categories`.
 /// Per-object `vgi.source_url` is intentionally NOT emitted (VGI139).

@@ -11,7 +11,7 @@ pub mod sample;
 pub mod scalar;
 pub mod table;
 
-/// Worker version string, surfaced by `reghive_version()`.
+/// Worker version string, published as the catalog `implementation_version`.
 pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }

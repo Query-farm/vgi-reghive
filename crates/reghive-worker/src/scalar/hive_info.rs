@@ -51,19 +51,32 @@ impl ScalarFunction for HiveInfo {
                     .into(),
                 expected_output: None,
             }],
-            tags: crate::meta::object_tags(
-                "Hive Header Summary",
-                "Return the regf base-block summary of a hive BLOB: logical hive_type, major/minor \
-                 format version, the canonical root path, the primary/secondary sequence numbers, \
-                 the is_dirty recovery flag (true when the checksum is wrong or the sequence \
-                 numbers disagree), and the header's last-written UTC timestamp. The triage-first \
-                 probe to decide whether a hive needs transaction-log recovery.",
-                "Summarize a hive's base block (type, version, sequence numbers, is_dirty, \
-                 last_written). Returns NULL for a non-hive blob.",
-                "hive info, base block, header, is_dirty, sequence number, version, recovery, \
-                 triage, regf",
-                "Header & validation",
-            ),
+            tags: {
+                let mut tags = crate::meta::object_tags(
+                    "Hive Header Summary",
+                    "Return the regf base-block summary of a hive `BLOB`: logical hive_type, \
+                     major/minor format version, the canonical root path, the primary/secondary \
+                     sequence numbers, the is_dirty recovery flag (true when the checksum is wrong \
+                     or the sequence numbers disagree), and the header's last-written UTC \
+                     timestamp. The triage-first probe to decide whether a hive needs \
+                     transaction-log recovery.",
+                    "Summarize a hive's base block (type, version, sequence numbers, is_dirty, \
+                     last_written). Returns NULL for a non-hive blob.",
+                    "hive info, base block, header, is_dirty, sequence number, version, recovery, \
+                     triage, regf",
+                    "Header & validation",
+                );
+                // VGI515: described-example carrier — the native examples column
+                // drops descriptions, so publish the same query with one here.
+                tags.push((
+                    "vgi.example_queries".to_string(),
+                    crate::meta::example_queries_json(&[(
+                        "Probe a hive's base-block summary (returns NULL on a non-hive blob).",
+                        "SELECT reghive.main.hive_info('\\x72656766'::BLOB);",
+                    )]),
+                ));
+                tags
+            },
             ..Default::default()
         }
     }

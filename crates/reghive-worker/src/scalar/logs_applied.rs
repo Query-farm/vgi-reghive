@@ -65,25 +65,36 @@ impl ScalarFunction for LogsApplied {
                           applied, entries_replayed, dirty_pages, became_clean, log_format"
                 .into(),
             examples: vec![FunctionExample {
-                sql: "SELECT reghive.main.logs_applied('regf'::BLOB, NULL, NULL);"
+                sql: "SELECT reghive.main.logs_applied('regf'::BLOB, NULL, NULL);".into(),
+                description: "Inspect a transaction-log replay (NULL struct for a non-hive blob)."
                     .into(),
-                description: "Inspect a transaction-log replay (NULL struct for a non-hive blob).".into(),
                 expected_output: None,
             }],
-            tags: crate::meta::object_tags(
-                "Transaction-Log Replay Report",
-                "Inspect replaying a dirty hive's transaction logs (.LOG1/.LOG2): whether a replay \
-                 applies (the primary is dirty and the logs carry usable entries), how many log \
-                 entries would be replayed, the total dirty pages they touch, whether the hive \
-                 would become clean, and the log_format (old pre-Win8.1 dirty-vector, new Win8.1+ \
-                 HvLE entry stream, or none). Use it when the logs are not co-located with the \
-                 primary in a glob.",
-                "Report a transaction-log replay against supplied .LOG1/.LOG2 blobs: applied, \
-                 entries_replayed, dirty_pages, became_clean, log_format.",
-                "logs applied, transaction log, LOG1, LOG2, replay, recovery, dirty hive, became \
-                 clean, sequence number, HvLE",
-                "Transaction logs",
-            ),
+            tags: {
+                let mut tags = crate::meta::object_tags(
+                    "Transaction-Log Replay Report",
+                    "Inspect replaying a dirty hive's transaction logs (.LOG1/.LOG2): whether a \
+                     replay applies (the primary is dirty and the logs carry usable entries), how \
+                     many log entries would be replayed, the total dirty pages they touch, whether \
+                     the hive would become clean, and the log_format (old pre-Win8.1 dirty-vector, \
+                     new Win8.1+ HvLE entry stream, or none). Use it when the logs are not \
+                     co-located with the primary in a glob.",
+                    "Report a transaction-log replay against supplied .LOG1/.LOG2 blobs: applied, \
+                     entries_replayed, dirty_pages, became_clean, log_format.",
+                    "logs applied, transaction log, LOG1, LOG2, replay, recovery, dirty hive, \
+                     became clean, sequence number, HvLE",
+                    "Transaction logs",
+                );
+                // VGI515: described-example carrier for the native example above.
+                tags.push((
+                    "vgi.example_queries".to_string(),
+                    crate::meta::example_queries_json(&[(
+                        "Inspect a transaction-log replay (NULL struct for a non-hive blob).",
+                        "SELECT reghive.main.logs_applied('regf'::BLOB, NULL, NULL);",
+                    )]),
+                ));
+                tags
+            },
             // NULL .LOG args mean "log not available" — receive them, do not
             // null-propagate the whole result.
             null_handling: Some("SPECIAL".to_string()),

@@ -38,22 +38,33 @@ impl ScalarFunction for HiveValue {
                           value_data, value_raw)"
                 .into(),
             examples: vec![FunctionExample {
-                sql: "SELECT reghive.main.hive_value('regf'::BLOB, 'Software', 'Run');"
-                    .into(),
+                sql: "SELECT reghive.main.hive_value('regf'::BLOB, 'Software', 'Run');".into(),
                 description: "Read one named value (NULL struct for a non-hive blob).".into(),
                 expected_output: None,
             }],
-            tags: crate::meta::object_tags(
-                "Single Value as Struct",
-                "Return one named value from a key in a hive BLOB as a struct: the REG_* \
-                 value_type, the coerced value_data rendering, and the lossless value_raw bytes. \
-                 Pass an empty string or NULL value_name for the key's (Default) value. Returns a \
-                 NULL struct when the key or value is absent.",
-                "Return one named value as a struct (value_type, value_data, value_raw). Empty/NULL \
-                 name selects the (Default) value; NULL struct if absent.",
-                "hive value, single value, get value, default value, value_data, value_raw, lookup",
-                "Targeted lookup",
-            ),
+            tags: {
+                let mut tags = crate::meta::object_tags(
+                    "Single Value as Struct",
+                    "Return one named value from a key in a hive `BLOB` as a struct: the REG_* \
+                     value_type, the coerced value_data rendering, and the lossless value_raw \
+                     bytes. Pass an empty string or NULL value_name for the key's (Default) value. \
+                     Returns a NULL struct when the key or value is absent.",
+                    "Return one named value as a struct (value_type, value_data, value_raw). \
+                     Empty/NULL name selects the (Default) value; NULL struct if absent.",
+                    "hive value, single value, get value, default value, value_data, value_raw, \
+                     lookup",
+                    "Targeted lookup",
+                );
+                // VGI515: described-example carrier for the native example above.
+                tags.push((
+                    "vgi.example_queries".to_string(),
+                    crate::meta::example_queries_json(&[(
+                        "Read one named value (NULL struct for a non-hive blob).",
+                        "SELECT reghive.main.hive_value('regf'::BLOB, 'Software', 'Run');",
+                    )]),
+                ));
+                tags
+            },
             // A NULL value_name selects the (Default) value — receive it rather
             // than null-propagating.
             null_handling: Some("SPECIAL".to_string()),

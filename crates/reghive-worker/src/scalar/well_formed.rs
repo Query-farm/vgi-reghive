@@ -53,19 +53,43 @@ impl ScalarFunction for WellFormed {
                 description: "Validate a blob as a regf hive (ok=false for non-hives).".into(),
                 expected_output: None,
             }],
-            tags: crate::meta::object_tags(
-                "Validate Hive",
-                "Check whether a BLOB is a parseable primary regf hive without walking it. Returns \
-                 ok (boolean), the best-effort hive_type, a human error message, and a kind tag \
-                 (one of not-a-hive, bad-signature, bad-checksum, truncated, short-base-block, \
-                 bin-size-overrun). Never raises — a garbage or truncated blob returns ok=false so \
-                 a bulk scan never crashes on one bad file.",
-                "Validate a BLOB as a regf hive: returns ok, hive_type, error, and a kind tag. \
-                 Never panics on hostile input.",
-                "well formed, validate, is hive, regf, bad signature, bad checksum, truncated, \
-                 corrupt, sanity check",
-                "Header & validation",
-            ),
+            tags: {
+                let mut tags = crate::meta::object_tags(
+                    "Validate Hive",
+                    "Check whether a `BLOB` is a parseable primary regf hive without walking it. \
+                     Returns ok (boolean), the best-effort hive_type, a human error message, and a \
+                     kind tag (one of not-a-hive, bad-signature, bad-checksum, truncated, \
+                     short-base-block, bin-size-overrun). Never raises — a garbage or truncated \
+                     blob returns ok=false so a bulk scan never crashes on one bad file.",
+                    "Validate a `BLOB` as a regf hive: returns ok, hive_type, error, and a kind \
+                     tag. Never panics on hostile input.",
+                    "well formed, validate, is hive, regf, bad signature, bad checksum, truncated, \
+                     corrupt, sanity check",
+                    "Header & validation",
+                );
+                // VGI515: described-example carrier for the native example above.
+                tags.push((
+                    "vgi.example_queries".to_string(),
+                    crate::meta::example_queries_json(&[(
+                        "Validate a blob as a regf hive (ok=false for non-hives).",
+                        "SELECT reghive.main.well_formed('not a hive'::BLOB);",
+                    )]),
+                ));
+                // VGI509: a guaranteed-runnable, fully self-contained example (no
+                // file, no credential) so agents have a verified example to learn
+                // from. well_formed is a total function over present bytes.
+                tags.push((
+                    "vgi.executable_examples".to_string(),
+                    r#"[
+  {
+    "description": "Validate that a non-hive blob is rejected without crashing, exposing the well-formedness verdict and reason.",
+    "sql": "SELECT (reghive.main.well_formed('not a hive'::BLOB)).ok AS ok, (reghive.main.well_formed('not a hive'::BLOB)).kind AS kind"
+  }
+]"#
+                    .to_string(),
+                ));
+                tags
+            },
             ..Default::default()
         }
     }

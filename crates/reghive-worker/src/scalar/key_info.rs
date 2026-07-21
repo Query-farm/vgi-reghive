@@ -42,24 +42,34 @@ impl ScalarFunction for KeyInfo {
                           class_name, is_deleted) without materializing its values"
                 .into(),
             examples: vec![FunctionExample {
-                sql: "SELECT reghive.main.key_info('regf'::BLOB, 'Software\\Microsoft');"
-                    .into(),
+                sql: "SELECT reghive.main.key_info('regf'::BLOB, 'Software\\Microsoft');".into(),
                 description: "Cheap key-metadata pivot (NULL struct for a non-hive blob).".into(),
                 expected_output: None,
             }],
-            tags: crate::meta::object_tags(
-                "Key Metadata",
-                "Return just a key's metadata for a given key_path in a hive BLOB: the last-write \
-                 UTC timestamp, the subkey and value counts, the class name (usually NULL), and \
-                 whether the key is a recovered deleted cell. Materializes no value data, so it is \
-                 cheap to call across many keys for timeline pivots. Returns a NULL struct when the \
-                 key is not found.",
-                "Return a key's metadata (last_write, subkey_count, value_count, class_name, \
-                 is_deleted) without reading its values. NULL struct if the key is absent.",
-                "key info, key metadata, last write, subkey count, value count, timeline, pivot, \
-                 last modified",
-                "Targeted lookup",
-            ),
+            tags: {
+                let mut tags = crate::meta::object_tags(
+                    "Key Metadata",
+                    "Return just a key's metadata for a given key_path in a hive `BLOB`: the \
+                     last-write UTC timestamp, the subkey and value counts, the class name \
+                     (usually NULL), and whether the key is a recovered deleted cell. Materializes \
+                     no value data, so it is cheap to call across many keys for timeline pivots. \
+                     Returns a NULL struct when the key is not found.",
+                    "Return a key's metadata (last_write, subkey_count, value_count, class_name, \
+                     is_deleted) without reading its values. NULL struct if the key is absent.",
+                    "key info, key metadata, last write, subkey count, value count, timeline, \
+                     pivot, last modified",
+                    "Targeted lookup",
+                );
+                // VGI515: described-example carrier for the native example above.
+                tags.push((
+                    "vgi.example_queries".to_string(),
+                    crate::meta::example_queries_json(&[(
+                        "Cheap key-metadata pivot (NULL struct for a non-hive blob).",
+                        "SELECT reghive.main.key_info('regf'::BLOB, 'Software\\Microsoft');",
+                    )]),
+                ));
+                tags
+            },
             ..Default::default()
         }
     }

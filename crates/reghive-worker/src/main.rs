@@ -25,6 +25,35 @@ use vgi::Worker;
 
 /// Catalog + schema metadata surfaced to DuckDB and the `vgi-lint` linter.
 fn catalog_metadata(name: &str) -> CatalogModel {
+    // Self-contained schema example queries: the committed synthetic SOFTWARE
+    // hive inlined as a BLOB literal (so they bind AND run under
+    // `vgi-lint --execute`), plus a browse of the reference view. Each carries a
+    // description (VGI515) and projects columns rather than `SELECT *` (VGI514).
+    let demo = sample::demo_hive_hex();
+    let read_hive_ex = format!(
+        "SELECT key_path, value_name, value_data \
+         FROM reghive.main.read_hive(unhex('{demo}')::BLOB) \
+         WHERE value_name = 'Updater'"
+    );
+    let hive_info_ex =
+        format!("SELECT (reghive.main.hive_info(unhex('{demo}')::BLOB)).is_dirty AS is_dirty");
+    let forensic_ex = "SELECT key_path, mitre_technique FROM reghive.main.forensic_keys \
+                       WHERE category = 'Persistence' ORDER BY key_path";
+    let schema_example_queries = meta::example_queries_json(&[
+        (
+            "Scan a collected hive and pull the Run-key persistence value it plants.",
+            read_hive_ex.as_str(),
+        ),
+        (
+            "Probe a hive's base-block header to decide whether it needs transaction-log recovery.",
+            hive_info_ex.as_str(),
+        ),
+        (
+            "Browse the well-known persistence keys to triage first, with their ATT&CK technique.",
+            forensic_ex,
+        ),
+    ]);
+
     CatalogModel {
         name: name.to_string(),
         comment: Some(
@@ -50,7 +79,7 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                 "Parse offline Windows Registry hive files (the regf format used by SYSTEM, \
                  SOFTWARE, NTUSER.DAT, SAM, SECURITY, UsrClass.dat, AmCache.hve) into typed \
                  key/value rows for digital forensics. Read a directory of collected hives with \
-                 read_hive(glob) or a single hive BLOB; pull a subtree with hive_subtree, a key \
+                 read_hive(glob) or a single hive `BLOB`; pull a subtree with hive_subtree, a key \
                  with hive_key, or a value with hive_value; probe the header with hive_info / \
                  well_formed; and inspect transaction-log replay with logs_applied. Supports \
                  .LOG1/.LOG2 transaction-log replay of dirty hives and deleted-cell recovery from \
@@ -83,8 +112,7 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                  bulk triage, or hand it a single in-memory hive to drill into one subtree, key, \
                  or value; header and validity probes tell you up front whether a hive is dirty \
                  and needs transaction-log recovery. The worker opens no socket and makes no \
-                 outbound calls — zero egress, safe for air-gapped evidence stores. List the \
-                 schema to discover the available functions and their signatures.\n\n\
+                 outbound calls — zero egress, safe for air-gapped evidence stores.\n\n\
                  Format references: the [msuhanov regf \
                  specification](https://github.com/msuhanov/regf/blob/master/Windows%20registry%20file%20format%20specification.md) \
                  and Google Project Zero's \"Windows Registry Adventure #5: regf\"."
@@ -93,14 +121,6 @@ fn catalog_metadata(name: &str) -> CatalogModel {
             (
                 "vgi.agent_test_tasks".to_string(),
                 meta::agent_test_tasks_json(&[
-                    meta::AgentTask {
-                        name: "worker_version",
-                        prompt: "What version of the reghive worker is running? Return one row \
-                                 with one column named version.",
-                        reference_sql: "SELECT reghive.main.reghive_version() AS version",
-                        unordered: true,
-                        ignore_column_names: true,
-                    },
                     meta::AgentTask {
                         name: "validate_non_hive",
                         prompt: "Is the text 'definitely not a hive' a valid registry hive? \
@@ -240,6 +260,11 @@ fn catalog_metadata(name: &str) -> CatalogModel {
             "https://github.com/msuhanov/regf/blob/master/Windows%20registry%20file%20format%20specification.md"
                 .to_string(),
         ),
+        // VGI328: the worker build version is published as catalog metadata
+        // (surfaced via `duckdb_databases()` / `catalog_catalogs`) rather than as
+        // a parameterless `reghive_version()` scalar spending a slot in the
+        // function surface.
+        implementation_version: Some(reghive_worker::version().to_string()),
         schemas: vec![CatSchema {
             name: "main".to_string(),
             comment: Some(
@@ -254,7 +279,7 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                 // `vgi.category` (via meta::object_tags) naming one of these.
                 (
                     "vgi.categories".to_string(),
-                    r#"[{"name":"Bulk parsing","description":"Scan whole hives — a directory glob or a single blob — into typed key/value rows for triage."},{"name":"Targeted lookup","description":"Pull one key or value (or a key's metadata) from a hive without scanning the whole tree."},{"name":"Header & validation","description":"Read a hive's base-block header and confirm the bytes are a well-formed regf hive."},{"name":"Transaction logs","description":"Report on .LOG1/.LOG2 transaction-log replay of a dirty hive."},{"name":"Reference","description":"Curated browsable reference data, such as the well-known forensic registry keys to triage."},{"name":"Utility","description":"Worker introspection such as the version string."}]"#
+                    r#"[{"name":"Bulk parsing","description":"Scan whole hives — a directory glob or a single blob — into typed key/value rows for triage."},{"name":"Targeted lookup","description":"Pull one key or value (or a key's metadata) from a hive without scanning the whole tree."},{"name":"Header & validation","description":"Read a hive's base-block header and confirm the bytes are a well-formed regf hive."},{"name":"Transaction logs","description":"Report on .LOG1/.LOG2 transaction-log replay of a dirty hive."},{"name":"Reference","description":"Curated browsable reference data, such as the well-known forensic registry keys to triage."}]"#
                         .to_string(),
                 ),
                 (
@@ -292,21 +317,12 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                      bytes are a well-formed regf hive.\n\
                      - **Transaction logs** — report on `.LOG1`/`.LOG2` replay of a dirty hive.\n\n\
                      Use it whenever you have a registry hive on disk and need its contents as \
-                     rows; list the schema to see each function and its signature."
+                     rows, from fleet-wide triage down to a single key or value."
                         .to_string(),
                 ),
                 (
                     "vgi.example_queries".to_string(),
-                    "SELECT * FROM reghive.main.read_hive('/cases/*/NTUSER.DAT');\n\
-                     SELECT * FROM reghive.main.hive_subtree(content, 'ControlSet001\\Services') \
-                     FROM read_blob('SYSTEM');\n\
-                     SELECT reghive.main.hive_key(content, 'ControlSet001\\Services\\Schedule') \
-                     FROM read_blob('SYSTEM');\n\
-                     SELECT reghive.main.hive_info(content) FROM read_blob('NTUSER.DAT');\n\
-                     SELECT key_path, mitre_technique FROM reghive.main.forensic_keys WHERE \
-                     category = 'Persistence';\n\
-                     SELECT reghive.main.reghive_version();"
-                        .to_string(),
+                    schema_example_queries,
                 ),
             ],
             // A browsable, VALUES-backed reference view: something an agent can
