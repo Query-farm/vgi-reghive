@@ -30,6 +30,9 @@ COPY crates ./crates
 # `include_bytes!("../../../tests/hives/software.hve")`, so the build needs the
 # hive fixtures (not the SQL suite under test/, which is excluded).
 COPY tests ./tests
+# Cargo.toml [patch.crates-io] points crossterm at vendor/crossterm (the copy
+# without the mio-pulling `events` default feature), so the build needs it too.
+COPY vendor ./vendor
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/src/target \
     cargo build --release --locked --bin reghive-worker \
