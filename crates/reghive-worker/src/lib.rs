@@ -146,31 +146,17 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                         name: "validate_non_hive",
                         prompt: "Is the text 'definitely not a hive' a valid registry hive? \
                                  Return one boolean column named ok.",
-                        reference_sql:
-                            "SELECT (reghive.main.well_formed('definitely not a hive'::BLOB)).ok \
-                             AS ok",
-                        unordered: true,
-                        ignore_column_names: true,
                     },
                     meta::AgentTask {
                         name: "non_hive_header_is_null",
                         prompt: "For the bytes 'not a registry hive', does the base-block header \
                                  summary come back as NULL (i.e. it is not a parseable hive)? \
                                  Return one boolean column named is_null.",
-                        reference_sql:
-                            "SELECT reghive.main.hive_info('not a registry hive'::BLOB) IS NULL \
-                             AS is_null",
-                        unordered: true,
-                        ignore_column_names: true,
                     },
                     meta::AgentTask {
                         name: "well_formed_kind_of_non_hive",
                         prompt: "Classify why the bytes 'nope' are not a valid registry hive — \
                                  return the well-formedness kind label in one column named kind.",
-                        reference_sql:
-                            "SELECT (reghive.main.well_formed('nope'::BLOB)).kind AS kind",
-                        unordered: true,
-                        ignore_column_names: true,
                     },
                     // Browse the curated reference view.
                     meta::AgentTask {
@@ -178,10 +164,6 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                         prompt: "The worker ships a reference list of well-known forensic \
                                  registry keys. How many of them are in the 'Persistence' \
                                  category? Return the count in one column named n.",
-                        reference_sql: "SELECT count(*) AS n FROM reghive.main.forensic_keys \
-                                        WHERE category = 'Persistence'",
-                        unordered: true,
-                        ignore_column_names: true,
                     },
                     meta::AgentTask {
                         name: "reference_key_for_run",
@@ -189,11 +171,6 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                                  keys, which MITRE ATT&CK technique is mapped to the classic \
                                  CurrentVersion\\Run autostart key? Return one column named \
                                  mitre_technique.",
-                        reference_sql: "SELECT mitre_technique FROM reghive.main.forensic_keys \
-                                        WHERE key_path = \
-                                        'Software\\Microsoft\\Windows\\CurrentVersion\\Run'",
-                        unordered: true,
-                        ignore_column_names: true,
                     },
                     // Exercise the parsers' robustness contract: non-registry input
                     // must yield an empty/NULL result, never an error. Each task
@@ -203,60 +180,36 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                         prompt: "The bulk hive reader must tolerate non-registry input without \
                                  error. When you read the bytes 'not a hive' as a hive, how many \
                                  rows come back? Return the count in one column named n.",
-                        reference_sql: "SELECT count(*) AS n FROM \
-                                        reghive.main.read_hive('not a hive'::BLOB)",
-                        unordered: true,
-                        ignore_column_names: true,
                     },
                     meta::AgentTask {
                         name: "hive_subtree_non_hive_empty",
                         prompt: "Reading the subtree 'Software' out of the non-registry bytes \
                                  'not a hive' must return no rows rather than failing. How many \
                                  rows come back? Return the count in one column named n.",
-                        reference_sql: "SELECT count(*) AS n FROM \
-                                        reghive.main.hive_subtree('not a hive'::BLOB, 'Software')",
-                        unordered: true,
-                        ignore_column_names: true,
                     },
                     meta::AgentTask {
                         name: "hive_key_non_hive_null",
                         prompt: "Looking up the key 'Software' in the non-registry bytes 'nope' \
                                  must yield NULL, not an error. Does it come back NULL? Return one \
                                  boolean column named is_null.",
-                        reference_sql: "SELECT reghive.main.hive_key('nope'::BLOB, 'Software') \
-                                        IS NULL AS is_null",
-                        unordered: true,
-                        ignore_column_names: true,
                     },
                     meta::AgentTask {
                         name: "hive_value_non_hive_null",
                         prompt: "Reading the value 'Updater' under key 'Run' from the \
                                  non-registry bytes 'nope' must yield NULL, not an error. Does it \
                                  come back NULL? Return one boolean column named is_null.",
-                        reference_sql: "SELECT reghive.main.hive_value('nope'::BLOB, 'Run', \
-                                        'Updater') IS NULL AS is_null",
-                        unordered: true,
-                        ignore_column_names: true,
                     },
                     meta::AgentTask {
                         name: "key_info_non_hive_null",
                         prompt: "Asking for the metadata of key 'Software' in the non-registry \
                                  bytes 'nope' must yield NULL, not an error. Does it come back \
                                  NULL? Return one boolean column named is_null.",
-                        reference_sql: "SELECT reghive.main.key_info('nope'::BLOB, 'Software') \
-                                        IS NULL AS is_null",
-                        unordered: true,
-                        ignore_column_names: true,
                     },
                     meta::AgentTask {
                         name: "logs_applied_non_hive_null",
                         prompt: "Inspecting a transaction-log replay for the non-registry bytes \
                                  'nope' (with no logs supplied) must yield NULL, not an error. \
                                  Does it come back NULL? Return one boolean column named is_null.",
-                        reference_sql: "SELECT reghive.main.logs_applied('nope'::BLOB, NULL, \
-                                        NULL) IS NULL AS is_null",
-                        unordered: true,
-                        ignore_column_names: true,
                     },
                 ]),
             ),
@@ -288,6 +241,7 @@ fn catalog_metadata(name: &str) -> CatalogModel {
         implementation_version: Some(version().to_string()),
         schemas: vec![CatSchema {
             name: "main".to_string(),
+            path: Vec::new(),
             comment: Some(
                 "Registry-hive parsing functions for DFIR triage: bulk directory scans, scoped \
                  subtree and single key/value lookups, header and validity probes, and \

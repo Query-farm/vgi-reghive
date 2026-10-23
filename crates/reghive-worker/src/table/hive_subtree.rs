@@ -171,4 +171,10 @@ impl TableProducer for SubtreeProducer {
         }
         Ok(Some(b.finish()?))
     }
+
+    // One batch over a single in-memory BLOB, then done: like read_hive's BLOB
+    // plan there is no cursor to carry across turns.
+    fn resume_supported(&self) -> bool {
+        false
+    }
 }

@@ -1,0 +1,54 @@
+# Private graders for the agent-suitability suite (`vgi-lint simulate`).
+#
+# The prompts are published in the catalog's vgi.agent_test_tasks tag
+# (catalog_metadata() in crates/reghive-worker/src/lib.rs); the answers live
+# here, keyed by task name, so the agent being graded never sees them (VGI416).
+# vgi-lint discovers this file in the repo root. Every reference is
+# deterministic (inline BLOBs or the built-in forensic_keys view), so the suite
+# needs no network access or hive files.
+
+tasks:
+  - name: "validate_non_hive"
+    reference_sql: "SELECT (reghive.main.well_formed('definitely not a hive'::BLOB)).ok AS ok"
+    unordered: true
+    ignore_column_names: true
+  - name: "non_hive_header_is_null"
+    reference_sql: "SELECT reghive.main.hive_info('not a registry hive'::BLOB) IS NULL AS is_null"
+    unordered: true
+    ignore_column_names: true
+  - name: "well_formed_kind_of_non_hive"
+    reference_sql: "SELECT (reghive.main.well_formed('nope'::BLOB)).kind AS kind"
+    unordered: true
+    ignore_column_names: true
+  - name: "persistence_reference_keys"
+    reference_sql: "SELECT count(*) AS n FROM reghive.main.forensic_keys WHERE category = 'Persistence'"
+    unordered: true
+    ignore_column_names: true
+  - name: "reference_key_for_run"
+    reference_sql: "SELECT mitre_technique FROM reghive.main.forensic_keys WHERE key_path = 'Software\\Microsoft\\Windows\\CurrentVersion\\Run'"
+    unordered: true
+    ignore_column_names: true
+  - name: "read_hive_non_hive_empty"
+    reference_sql: "SELECT count(*) AS n FROM reghive.main.read_hive('not a hive'::BLOB)"
+    unordered: true
+    ignore_column_names: true
+  - name: "hive_subtree_non_hive_empty"
+    reference_sql: "SELECT count(*) AS n FROM reghive.main.hive_subtree('not a hive'::BLOB, 'Software')"
+    unordered: true
+    ignore_column_names: true
+  - name: "hive_key_non_hive_null"
+    reference_sql: "SELECT reghive.main.hive_key('nope'::BLOB, 'Software') IS NULL AS is_null"
+    unordered: true
+    ignore_column_names: true
+  - name: "hive_value_non_hive_null"
+    reference_sql: "SELECT reghive.main.hive_value('nope'::BLOB, 'Run', 'Updater') IS NULL AS is_null"
+    unordered: true
+    ignore_column_names: true
+  - name: "key_info_non_hive_null"
+    reference_sql: "SELECT reghive.main.key_info('nope'::BLOB, 'Software') IS NULL AS is_null"
+    unordered: true
+    ignore_column_names: true
+  - name: "logs_applied_non_hive_null"
+    reference_sql: "SELECT reghive.main.logs_applied('nope'::BLOB, NULL, NULL) IS NULL AS is_null"
+    unordered: true
+    ignore_column_names: true

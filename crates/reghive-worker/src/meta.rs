@@ -22,21 +22,19 @@ pub fn keywords_json(keywords: &str) -> String {
     format!("[{}]", items.join(","))
 }
 
-/// One analyst task for the `vgi.agent_test_tasks` suite that `vgi-lint simulate`
-/// (VGI920) grades: a `name`, a natural-language `prompt`, the canonical
-/// `reference_sql`, and two result-comparison relaxations — `unordered` (row
-/// order is not significant) and `ignore_column_names` (compare by values, not
-/// by output column names). Keep the reference deterministic (no wall clock,
-/// no external files) so the comparison is stable across runs.
+/// One analyst task for the `vgi.agent_test_tasks` suite: the analyst-visible `name` + `prompt`.
+/// Only this public half is published in the catalog tag; each task's grader
+/// (`reference_sql` plus the `unordered` / `ignore_column_names` result-compare
+/// policy) lives in `vgi-agent-tests.yaml` at the repo root, keyed by task name,
+/// so the agent being graded never sees it (VGI416).
 pub struct AgentTask {
     pub name: &'static str,
     pub prompt: &'static str,
-    pub reference_sql: &'static str,
-    pub unordered: bool,
-    pub ignore_column_names: bool,
 }
 
-/// Build the `vgi.agent_test_tasks` JSON value from a fixed suite of tasks.
+/// Build the `vgi.agent_test_tasks` JSON value: the fixed suite of analyst tasks
+/// that `vgi-lint simulate` runs. Only `name` + `prompt` are emitted; the grader
+/// for each task is in `vgi-agent-tests.yaml`.
 pub fn agent_test_tasks_json(tasks: &[AgentTask]) -> String {
     fn esc(s: &str) -> String {
         s.replace('\\', "\\\\")
@@ -47,13 +45,9 @@ pub fn agent_test_tasks_json(tasks: &[AgentTask]) -> String {
         .iter()
         .map(|t| {
             format!(
-                "{{\"name\":\"{}\",\"prompt\":\"{}\",\"reference_sql\":\"{}\",\
-                 \"unordered\":{},\"ignore_column_names\":{}}}",
+                "{{\"name\":\"{}\",\"prompt\":\"{}\"}}",
                 esc(t.name),
                 esc(t.prompt),
-                esc(t.reference_sql),
-                t.unordered,
-                t.ignore_column_names,
             )
         })
         .collect();
