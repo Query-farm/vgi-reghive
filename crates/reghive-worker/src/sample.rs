@@ -2,10 +2,11 @@
 //!
 //! Two things live here so the rest of the worker stays parser-focused:
 //!
-//! 1. [`demo_hive_hex`] — the committed synthetic **SOFTWARE** fixture
-//!    (`tests/hives/software.hve`) hex-encoded at build time via `include_bytes!`,
-//!    so the `read_hive` / `hive_subtree` example queries are fully self-contained
-//!    (`unhex('…')::BLOB`) and cannot drift from the fixture the tests use. The
+//! 1. [`demo_hive_blob_sql`] — the committed synthetic **SOFTWARE** fixture
+//!    (`tests/hives/software.hve`) embedded at build time via `include_bytes!`
+//!    and rendered as a compact `unhex(…)::BLOB` expression, so the `read_hive` /
+//!    `hive_subtree` example queries are fully self-contained and cannot drift
+//!    from the fixture the tests use. The
 //!    hive carries a classic Run-key persistence value
 //!    (`Software\Microsoft\Windows\CurrentVersion\Run` → `Updater` =
 //!    `C:\Windows\evil.exe`).
@@ -17,17 +18,55 @@
 
 use vgi::catalog::CatView;
 
-/// The demo SOFTWARE hive (`tests/hives/software.hve`) as a lowercase hex string,
-/// suitable for `unhex('…')::BLOB`. Encoded from the committed fixture at build
-/// time so it always matches the golden hive the tests parse.
-pub fn demo_hive_hex() -> String {
-    const BYTES: &[u8] = include_bytes!("../../../tests/hives/software.hve");
-    let mut s = String::with_capacity(BYTES.len() * 2);
-    for b in BYTES {
-        use std::fmt::Write as _;
-        let _ = write!(s, "{b:02x}");
+/// The demo SOFTWARE hive (`tests/hives/software.hve`), embedded at build time so
+/// it always matches the golden hive the tests parse.
+const DEMO_HIVE: &[u8] = include_bytes!("../../../tests/hives/software.hve");
+
+/// Zero runs at least this long are emitted as `repeat('00', n)` in
+/// [`demo_hive_blob_sql`] rather than spelled out.
+const ZERO_RUN_MIN: usize = 32;
+
+/// The demo SOFTWARE hive as a self-contained SQL BLOB expression,
+/// `unhex('…' || repeat('00', n) || '…')::BLOB`.
+///
+/// The 12 KiB fixture is about 90% zero padding, so spelling it out as one hex
+/// literal costs ~24,600 characters, far past vgi-lint's 4,000-character
+/// agent-context bound for a metadata value (VGI417). Folding the long zero runs
+/// into `repeat('00', n)` keeps the identical bytes in ~2,700 characters while
+/// the example still binds AND returns rows under `vgi-lint --execute` (table
+/// functions take constant expressions, so the concatenation folds at bind).
+pub fn demo_hive_blob_sql() -> String {
+    compact_blob_sql(DEMO_HIVE)
+}
+
+/// Render `bytes` as `unhex(<parts joined by ||>)::BLOB`, folding runs of at
+/// least [`ZERO_RUN_MIN`] zero bytes into `repeat('00', n)`.
+fn compact_blob_sql(bytes: &[u8]) -> String {
+    use std::fmt::Write as _;
+    let mut parts: Vec<String> = Vec::new();
+    let mut lit = String::new();
+    let mut i = 0;
+    while i < bytes.len() {
+        let run = bytes[i..].iter().take_while(|&&b| b == 0).count();
+        if run >= ZERO_RUN_MIN {
+            if !lit.is_empty() {
+                parts.push(format!("'{lit}'"));
+                lit.clear();
+            }
+            parts.push(format!("repeat('00', {run})"));
+            i += run;
+        } else {
+            let _ = write!(lit, "{:02x}", bytes[i]);
+            i += 1;
+        }
     }
-    s
+    if !lit.is_empty() {
+        parts.push(format!("'{lit}'"));
+    }
+    if parts.is_empty() {
+        parts.push("''".to_string());
+    }
+    format!("unhex({})::BLOB", parts.join(" || "))
 }
 
 /// The Run-key path inside the demo hive (root name stripped, as `read_hive`
@@ -126,5 +165,53 @@ SELECT * FROM (VALUES \
                     .to_string(),
             ),
         ],
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Decode the expression back to bytes the way DuckDB would evaluate it.
+    fn eval(sql: &str) -> Vec<u8> {
+        let inner = sql
+            .strip_prefix("unhex(")
+            .and_then(|s| s.strip_suffix(")::BLOB"))
+            .expect("unhex(...)::BLOB wrapper");
+        let mut hex = String::new();
+        for part in inner.split(" || ") {
+            if let Some(n) = part
+                .strip_prefix("repeat('00', ")
+                .and_then(|s| s.strip_suffix(')'))
+            {
+                hex.push_str(&"00".repeat(n.parse().unwrap()));
+            } else {
+                hex.push_str(part.trim_matches('\''));
+            }
+        }
+        (0..hex.len())
+            .step_by(2)
+            .map(|k| u8::from_str_radix(&hex[k..k + 2], 16).unwrap())
+            .collect()
+    }
+
+    #[test]
+    fn demo_blob_sql_round_trips_and_fits_agent_context() {
+        let sql = demo_hive_blob_sql();
+        assert_eq!(eval(&sql), DEMO_HIVE);
+        assert!(sql.len() < 3_000, "demo blob SQL is {} chars", sql.len());
+    }
+
+    #[test]
+    fn compact_blob_sql_edge_cases() {
+        for bytes in [
+            vec![],
+            vec![0u8; 5],
+            vec![0u8; 40],
+            vec![1, 2, 3],
+            [vec![7u8], vec![0u8; 64], vec![9u8]].concat(),
+        ] {
+            assert_eq!(eval(&compact_blob_sql(&bytes)), bytes);
+        }
     }
 }

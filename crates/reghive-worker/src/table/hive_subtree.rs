@@ -48,11 +48,11 @@ impl TableFunction for HiveSubtree {
         // Self-contained example: scope the scan to the Run key of the committed
         // synthetic SOFTWARE hive (inlined as a BLOB literal, so it binds AND
         // returns rows under `vgi-lint --execute`).
-        let demo = crate::sample::demo_hive_hex();
+        let demo = crate::sample::demo_hive_blob_sql();
         let run = crate::sample::DEMO_RUN_KEY_PATH;
         let example_sql = format!(
             "SELECT key_path, value_name, value_data \
-             FROM reghive.main.hive_subtree(unhex('{demo}')::BLOB, '{run}') \
+             FROM reghive.main.hive_subtree({demo}, '{run}') \
              ORDER BY value_name"
         );
         let example_desc = "Read just the Run persistence branch of a hive without materializing \

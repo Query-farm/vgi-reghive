@@ -50,24 +50,21 @@ fn catalog_metadata(name: &str) -> CatalogModel {
     // hive inlined as a BLOB literal (so they bind AND run under
     // `vgi-lint --execute`), plus a browse of the reference view. Each carries a
     // description (VGI515) and projects columns rather than `SELECT *` (VGI514).
-    let demo = sample::demo_hive_hex();
+    // VGI417: the whole tag must stay under 4,000 characters, and the inline hive
+    // costs ~2,700, so only one hive-backed example fits here; the hive_info probe
+    // is shown in that function's own examples.
+    let demo = sample::demo_hive_blob_sql();
     let read_hive_ex = format!(
         "SELECT key_path, value_name, value_data \
-         FROM reghive.main.read_hive(unhex('{demo}')::BLOB) \
+         FROM reghive.main.read_hive({demo}) \
          WHERE value_name = 'Updater'"
     );
-    let hive_info_ex =
-        format!("SELECT (reghive.main.hive_info(unhex('{demo}')::BLOB)).is_dirty AS is_dirty");
     let forensic_ex = "SELECT key_path, mitre_technique FROM reghive.main.forensic_keys \
                        WHERE category = 'Persistence' ORDER BY key_path";
     let schema_example_queries = meta::example_queries_json(&[
         (
             "Scan a collected hive and pull the Run-key persistence value it plants.",
             read_hive_ex.as_str(),
-        ),
-        (
-            "Probe a hive's base-block header to decide whether it needs transaction-log recovery.",
-            hive_info_ex.as_str(),
         ),
         (
             "Browse the well-known persistence keys to triage first, with their ATT&CK technique.",

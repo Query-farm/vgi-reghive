@@ -68,10 +68,10 @@ impl TableFunction for ReadHive {
         // (with a classic Run-key persistence value) inlined as a BLOB literal, so
         // it binds AND returns rows under `vgi-lint --execute`. Table functions
         // bind literal args only, hence `unhex(...)` rather than a column.
-        let demo = crate::sample::demo_hive_hex();
+        let demo = crate::sample::demo_hive_blob_sql();
         let example_sql = format!(
             "SELECT key_path, value_name, value_type, value_data \
-             FROM reghive.main.read_hive(unhex('{demo}')::BLOB) \
+             FROM reghive.main.read_hive({demo}) \
              WHERE value_name = 'Updater'"
         );
         let example_desc = "Scan a whole hive and pull the Run-key persistence value (Updater) it \
