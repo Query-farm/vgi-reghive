@@ -5,7 +5,7 @@
 # ci/run-integration.sh for local runs.
 #
 # Prerequisites (one-time):
-#   uv tool install 'haybarn-unittest<2'      # the DuckDB unittest binary
+#   uv tool install --prerelease allow 'haybarn-unittest>=2.0.0rc11,<2.1'      # the DuckDB unittest binary
 #
 # TRANSPORT defaults to subprocess; set it to http or unix to exercise the
 # other transports:
@@ -18,7 +18,7 @@ cd "$REPO_ROOT"
 HAYBARN_UNITTEST="${HAYBARN_UNITTEST:-$(command -v haybarn-unittest || true)}"
 if [[ -z "$HAYBARN_UNITTEST" || ! -x "$HAYBARN_UNITTEST" ]]; then
     echo "ERROR: haybarn-unittest not found. Install it with:" >&2
-    echo "       uv tool install 'haybarn-unittest<2'" >&2
+    echo "       uv tool install --prerelease allow 'haybarn-unittest>=2.0.0rc11,<2.1'" >&2
     exit 1
 fi
 

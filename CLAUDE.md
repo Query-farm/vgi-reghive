@@ -75,7 +75,7 @@ cargo clippy --all-targets -- -D warnings
 cargo fmt --all --check
 cargo test
 RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --workspace
-uvx --from vgi-lint-check vgi-lint lint ./target/release/reghive-worker --fail-on info
+uvx --prerelease allow --from 'vgi-lint-check>=2.0.1' vgi-lint lint ./target/release/reghive-worker --fail-on info
 HAYBARN_UNITTEST=$(command -v haybarn-unittest) WORKER_BIN=$PWD/target/release/reghive-worker \
   TRANSPORT=subprocess ci/run-integration.sh   # also unix / http
 ```

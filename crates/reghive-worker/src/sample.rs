@@ -165,6 +165,7 @@ SELECT * FROM (VALUES \
                     .to_string(),
             ),
         ],
+        ..Default::default()
     }
 }
 
