@@ -90,6 +90,7 @@ impl ScalarFunction for WellFormed {
                 ));
                 tags
             },
+            return_type: Some(DataType::Struct(fields())),
             ..Default::default()
         }
     }

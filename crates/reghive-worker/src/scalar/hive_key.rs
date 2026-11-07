@@ -98,6 +98,7 @@ impl ScalarFunction for HiveKey {
                 ));
                 tags
             },
+            return_type: Some(DataType::Struct(fields())),
             ..Default::default()
         }
     }

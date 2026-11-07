@@ -77,6 +77,7 @@ impl ScalarFunction for HiveInfo {
                 ));
                 tags
             },
+            return_type: Some(DataType::Struct(fields())),
             ..Default::default()
         }
     }

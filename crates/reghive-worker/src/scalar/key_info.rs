@@ -70,6 +70,7 @@ impl ScalarFunction for KeyInfo {
                 ));
                 tags
             },
+            return_type: Some(DataType::Struct(fields())),
             ..Default::default()
         }
     }

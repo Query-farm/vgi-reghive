@@ -68,6 +68,7 @@ impl ScalarFunction for HiveValue {
             // A NULL value_name selects the (Default) value — receive it rather
             // than null-propagating.
             null_handling: Some("SPECIAL".to_string()),
+            return_type: Some(DataType::Struct(fields())),
             ..Default::default()
         }
     }

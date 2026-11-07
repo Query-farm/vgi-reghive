@@ -98,6 +98,7 @@ impl ScalarFunction for LogsApplied {
             // NULL .LOG args mean "log not available" — receive them, do not
             // null-propagate the whole result.
             null_handling: Some("SPECIAL".to_string()),
+            return_type: Some(DataType::Struct(fields())),
             ..Default::default()
         }
     }
