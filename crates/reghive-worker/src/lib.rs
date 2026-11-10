@@ -82,7 +82,13 @@ fn catalog_metadata(name: &str) -> CatalogModel {
         tags: vec![
             (
                 "vgi.title".to_string(),
-                "Windows Registry Hive Parsing (regf) for DFIR".to_string(),
+                "Windows Registry Hives".to_string(),
+            ),
+            (
+                "vgi.subtitle".to_string(),
+                "Parse offline Windows Registry hive files into SQL rows for forensics, with \
+                 transaction-log replay and deleted-key recovery."
+                    .to_string(),
             ),
             (
                 "vgi.keywords".to_string(),
@@ -246,7 +252,7 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                     .to_string(),
             ),
             tags: vec![
-                ("vgi.title".to_string(), "Reghive — main".to_string()),
+                ("vgi.title".to_string(), "Hive parsing".to_string()),
                 // VGI413: ordered category registry. Each function declares a
                 // `vgi.category` (via meta::object_tags) naming one of these.
                 (

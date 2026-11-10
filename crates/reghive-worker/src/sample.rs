@@ -93,7 +93,7 @@ SELECT * FROM (VALUES \
 ) AS t(key_path, hive, category, description, mitre_technique)";
 
     let mut tags = crate::meta::object_tags(
-        "Well-Known Forensic Registry Keys",
+        "Forensic registry keys",
         "A curated reference of well-known Windows Registry locations that matter in DFIR triage — \
          Run/RunOnce and Winlogon persistence, the Services branch, AmCache and ShimCache and \
          UserAssist execution evidence, and the installed-software inventory. Each row gives the \
