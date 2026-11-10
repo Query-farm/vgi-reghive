@@ -23,7 +23,7 @@ Every [GitHub release](https://github.com/Query-farm/vgi-reghive/releases) ships
 INSTALL vgi FROM community;
 LOAD vgi;
 
-ATTACH 'reghive' AS reghive (TYPE vgi, LOCATION 'github-auto://Query-farm/vgi-reghive@v0.2.1');
+ATTACH 'reghive' AS reghive (TYPE vgi, LOCATION 'github-auto://Query-farm/vgi-reghive@v0.3.0');
 
 -- Scan a collected hive and pull the Run-key persistence value it plants.
 SELECT key_path, value_name, value_data FROM reghive.main.read_hive(unhex('7265676601000000010000000000056936c0d501010000000300000000000000010000002000000000200000010000005c00530079007300740065006d0052006f006f0074005c00530079007300740065006d00330032005c0043006f006e006600690067005c0053004f00460054' || repeat('00', 397) || '1085c20e' || repeat('00', 3584) || '6862696e0000000000200000000000000000000000000000000000000000000090ffffff6e6b24000000056936c0d50100000000000000000100000000000000b0030000ffffffff00000000ffffffffffffffffffffffff00000000000000000000000000000000000000001e000000434d492d437265617465486976652d7b534f4654574152452d475549447d0000a8ffffff6e6b20000000056936c0d50100000000200000000100000000000000a0030000ffffffff00000000ffffffffffffffffffffffff000000000000000000000000000000000000000008000000536f667477617265a0ffffff6e6b20000000056936c0d5010000000090000000010000000000000090030000ffffffff00000000ffffffffffffffffffffffff0000000000000000000000000000000000000000090000004d6963726f736f667400000000000000a8ffffff6e6b20000000056936c0d50100000000e8000000010000000000000080030000ffffffff00000000ffffffffffffffffffffffff00000000000000000000000000000000000000000700000057696e646f777300a0ffffff6e6b20000000056936c0d5010000000048010000010000000000000070030000ffffffff00000000ffffffffffffffffffffffff00000000000000000000000000000000000000000e00000043757272656e7456657273696f6e0000a8ffffff6e6b20000000056936c0d50100000000a0010000000000000000000000000000ffffffff0500000058030000ffffffffffffffff00000000000000000000000000000000000000000300000052756e0000000000d0ffffff43003a005c00570069006e0064006f00770073005c006500760069006c002e00650078006500000000000000e0ffffff766b0700280000005802000001000000010000005570646174657200e0ffffff766b0500040000800200000004000000010000005374617274000000f0ffffff665544332211000000000000e0ffffff766b030008000000c80200000b000000010000004269670000000000e0ffffff61006c00700068006100000062006500740061000000000000000000e0ffffff766b040018000000f802000007000000010000004c69737400000000e0ffffff766b040004000080deadbeef0300000001000000426c6f6200000000e8ffffff88020000a8020000d80200001803000038030000f0ffffff6c6601000002000052756e00f0ffffff6c660100a001000043757272f0ffffff6c6601004801000057696e64f0ffffff6c660100e80000004d696372f0ffffff6c66010090000000536f6674180000007700610073002d0068006500720065000000000020000000766b050012000000c00300000100000001000000547261636500000008000000d8030000580000006e6b20000000056936c0d5010000000000000000000000000000000000000000ffffffff01000000f8030000ffffffffffffffff00000000000000000000000000000000000000000800000047686f73744b6579a81b' || repeat('00', 7078))::BLOB) WHERE value_name = 'Updater';
@@ -32,14 +32,14 @@ SELECT key_path, value_name, value_data FROM reghive.main.read_hive(unhex('72656
 SELECT key_path, mitre_technique FROM reghive.main.forensic_keys WHERE category = 'Persistence' ORDER BY key_path;
 ```
 
-Prebuilt binaries cover macOS (Apple silicon), Linux (x86-64 and arm64). `github-auto://` needs an explicit release tag; change `@v0.2.1` to move to a newer release.
+Prebuilt binaries cover macOS (Apple silicon), Linux (x86-64 and arm64). `github-auto://` needs an explicit release tag; change `@v0.3.0` to move to a newer release.
 
 ### Other ways to run it
 
 - **Docker** (the image bundles the worker; needs a container runtime):
 
   ```sql
-  ATTACH 'reghive' AS reghive (TYPE vgi, LOCATION 'docker://ghcr.io/query-farm/vgi-reghive:0.2.1');
+  ATTACH 'reghive' AS reghive (TYPE vgi, LOCATION 'docker://ghcr.io/query-farm/vgi-reghive:0.3.0');
   ```
 
 - **Manual download.** Download the archive for your platform from the [releases page](https://github.com/Query-farm/vgi-reghive/releases), verify it against its `.sha256` file (a cosign `.cosign.bundle` is published alongside), unpack it, and set `LOCATION` to the path of the extracted worker executable.
@@ -74,7 +74,7 @@ community `vgi` extension; haybarn 1.5 cannot attach it.
 ```sql
 INSTALL vgi FROM community;
 LOAD vgi;
-ATTACH 'reghive' AS reghive (TYPE vgi, LOCATION 'github-auto://Query-farm/vgi-reghive@v0.2.1');
+ATTACH 'reghive' AS reghive (TYPE vgi, LOCATION 'github-auto://Query-farm/vgi-reghive@v0.3.0');
 SET search_path = 'reghive.main';
 
 -- 1. Read a directory of collected hives into key/value rows. read_hive()
