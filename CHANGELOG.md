@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0]
+
+### Changed
+
+- Port to VGI protocol 3.3 (vgi 0.51.0, vgi-rpc 0.32.4). Requires the current
+  VGI DuckDB extension; 3.2 extensions are incompatible.
+
 ## [0.1.0]
 
 ### Added
