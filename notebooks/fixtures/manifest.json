@@ -1,0 +1,12 @@
+{
+  "source_commit": "b8e9cb9dd4bea9b6181c36ffeb4dce2d8a81dbd5",
+  "source_directory": "tests/hives",
+  "note": "Four unchanged synthetic fixtures and an authored empty input; no log files provided.",
+  "sha256": {
+    "empty.bin": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "garbage.bin": "84d9091a4044909d565ce5ca5678d0484045906dd44d39dca787009283ff93dc",
+    "software.hve": "1902eec7fbff4eb460685319a4bd5b285c6adc4167b2937b16e1c31beccf657c",
+    "system_clean.hve": "b60874d350b9322dd14531d18c0577e00a2548e6993532ff87ec267c379bb638",
+    "system_dirty.hve": "bbff469d21396e3949374ae9c30eede27a280e82b7be65112e0e4133ee985312"
+  }
+}

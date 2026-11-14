@@ -220,3 +220,7 @@ proxy.
 ---
 
 Copyright 2026 Query Farm LLC — https://query.farm
+
+## Executable notebooks
+
+See [the SQL-first Python notebook](notebooks/README.md) for a synthetic Registry-hive input audit, typed values and deleted-record recovery with visualizations.
