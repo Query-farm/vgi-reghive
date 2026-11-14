@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Composed example queries combining the worker's objects (read_hive joined to
+  forensic_keys, key_info coverage over forensic_keys, well_formed + hive_info
+  header triage), two composed agent tasks, and `test/sql/composed.test`.
+
+### Fixed
+
+- README listed a `reghive_version()` scalar that is not registered; README
+  example 6 now probes every reference key against every collected hive.
+
 ## [0.4.0]
 
 ### Changed
