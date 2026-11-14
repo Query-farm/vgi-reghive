@@ -1,90 +1,73 @@
-# VGI Reghive notebooks
+# Windows Registry Hives
 
-[01 · Recovery changes the evidence population](01_recovery_changes_the_evidence_population.ipynb)
-uses visible Haybarn SQL to audit six inputs, inspect typed Registry values, and
-compare allocated values with recovered rows. Seaborn/Matplotlib charts preserve
-input coverage and separate recovery provenance. The saved notebook is executed.
+Two executed, SQL-first examples use small synthetic Registry hives:
 
-## Run
+- [01 · Recovery changes the evidence population](01_recovery_changes_the_evidence_population.ipynb) retains all six supplied/missing inputs, separates header health from recovery, and counts allocated versus recovered value rows.
+- [02 · A missing key needs a search scope](02_a_missing_key_needs_a_search_scope.ipynb) combines the built-in reference list with key metadata, a nested key, one named value and a relational subtree. It preserves absent keys instead of presenting them as empty keys.
 
-Install `uv`, then from this directory:
+Each notebook has an **Open in Colab** link. A notebook downloaded on its own
+retrieves checksum-verified fixtures and plotting code. Initial setup needs network
+access; the analyses then use local synthetic bytes, without credentials, a Rust
+compiler or a worker checkout. The visible connection uses the native release:
+
+```sql
+ATTACH 'reghive' (TYPE vgi,
+  LOCATION 'github-auto://Query-farm/vgi-reghive@v0.4.0');
+```
+
+For local execution, install [uv](https://docs.astral.sh/uv/) and run:
 
 ```sh
+cd notebooks
 uv sync --locked
-uv run --locked python execute.py
+uv run --locked vgi-notebooks
 ```
 
-The runner uses a temporary kernel, works from this directory, and replaces the
-saved notebook only after successful execution. The entire `notebooks/` directory
-can be copied elsewhere; no worker checkout or Rust build is needed. Internet access
-is required initially for the Python environment, community VGI extension and native
-GitHub release. The release must have an asset for your platform; this example was
-verified on macOS Apple silicon with Haybarn 2.0.0rc11.
+Select `notebooks/.venv/bin/python` in a notebook editor. Colab uses the shared base
+package and preserves compatible preloaded plotting and kernel libraries; the local
+lock additionally installs the runner. Setup is checked in a compatible preloaded
+local kernel, without claiming a manual hosted-Colab session. GitHub shows saved
+tables and SVG charts; it does not honor editor cell-folding metadata.
 
-For VS Code, select this directory's `.venv/bin/python` interpreter as the notebook
-kernel. Alternatively register it explicitly:
+## Experiments
+
+Restart and run all after editing a parameter. To preserve the saved defaults:
 
 ```sh
-uv run --locked python -m ipykernel install --user --name vgi-reghive-notebooks --display-name 'Python (vgi-reghive notebooks)'
+uv run --locked vgi-notebooks 01_recovery_changes_the_evidence_population.ipynb \
+  --parameters '{"RECOVER_DELETED":true}' --output-dir artifacts/recovery
+uv run --locked vgi-notebooks 02_a_missing_key_needs_a_search_scope.ipynb \
+  --parameters '{"TARGET_KEY":"RunOnce"}' --output-dir artifacts/missing-key
 ```
 
-Keep the working directory here when running interactively. Connection SQL and
-analytical SQL remain visible; helper code is folded. Restart and run all after
-editing `RECOVER_DELETED`.
+Recovery adds two returned representations of one deleted Trace value, while the
+nine allocated value rows and six-input audit stay fixed. Those representations
+are not two independent deletion events. Selecting RunOnce changes the selected
+key/value structures to NULL and its subtree from five value rows to none. The
+four-key reference audit and input bytes stay fixed.
 
-## Experiment
+## Inputs and scope
 
-```sh
-uv run --locked python execute.py --parameters '{"RECOVER_DELETED": true}' --output-dir validation/recovery
-```
+[fixtures/manifest.json](fixtures/manifest.json) records the origin and hashes of
+four unchanged worker test fixtures plus an authored empty input. A SQL NULL
+represents missing input. All three hives are synthetic, with fixed timestamps and
+inert example path strings. No live machine, personal hive or credential material
+is used. No transaction logs are supplied; `logs_applied` is demonstrated as a
+no-log diagnostic, without claiming successful replay coverage.
 
-The output directory receives the notebook and its branding, fixture and environment
-companions. Overrides without a separate destination are rejected. The default has
-nine allocated value rows and no recovered rows; enabling recovery keeps those nine
-and exposes two SOFTWARE rows with different recovery labels for the same synthetic
-deleted value. They are not two distinct deletion events. The input audit stays the
-same. Restore `False` to reset the example.
+The first example explicitly disables log replay and controls recovery on
+`read_hive`. The second disables both options on `hive_subtree`. Scalar key/value
+lookups have no recovery switch, so their reconciliation is limited to the known
+live key in this fixture. Absence means not found in the supplied file and search
+scope; it does not prove historical absence. A key last-write time is not an
+execution or deletion timestamp, and a reference technique is not a verdict.
 
-## Worker and data provenance
+All **9/9 named SQL surfaces** in release v0.4.0 are demonstrated. Complete exports,
+source review, per-cell execution receipts and narrative mappings are retained in
+[coverage.json](coverage.json) and [coverage/](coverage/). Current-main registrations
+and implementations match these released interfaces; only metadata/examples and
+tests changed. Exact runtime execution is against the public release, not a rebuilt
+current-main binary. Existing green source CI is reused for these notebook-only edits.
 
-The connection uses the literal published native location
-`github-auto://Query-farm/vgi-reghive@v0.4.0`. To upgrade it, change the visible pin
-and rerun both parameter settings; output details depend on the parser release.
-The reader does not need the source build used for repository validation.
-
-`fixtures/software.hve`, `system_clean.hve`, `system_dirty.hve`, and `garbage.bin`
-are unchanged synthetic fixtures from `tests/hives` at commit
-`b8e9cb9dd4bea9b6181c36ffeb4dce2d8a81dbd5`. `empty.bin` is an authored zero-byte input;
-SQL adds a separate NULL missing-input record. `fixtures/manifest.json` records all
-five hashes. The source fixture generator is
-`crates/reghive-core/examples/gen_fixtures.rs`. No SAM hive or log file is included.
-All hive timestamps are fixed test values; no machine was surveyed. Path strings
-are inert example content and are never executed.
-
-Header validity, dirty state and recovery scope answer different questions. A valid
-base block does not certify every cell. `apply_logs:=false` is explicit; the scalar
-log probe receives NULL log arguments. This notebook does not demonstrate transaction
-replay, establish acquisition completeness, infer deletion times, classify malware,
-or decode credentials. `mode:='values'` also returns key-only rows in this release;
-the SQL uses `value_type IS NOT NULL` when counting values. Recovery may represent
-the same deleted content through multiple paths, so returned-row counts are not
-counts of distinct historical settings.
-
-## Validation
-
-The default and a detached copy with recovery enabled execute through the real
-published worker. Twelve SQL checks plus a chart-row reconciliation cover input
-coverage, dirty state, typed decoding, source-scoped joins and recovery labels.
-Both charts are inspected in each mode. Runner checks cover overrides without a
-destination, unknown parameters and a failing invalid-parameter run preserving
-saved outputs. Fixture hashes match their provenance manifest.
-
-Repository validation passes locked release build, 36 Rust tests, Clippy, formatting,
-warning-clean Rust documentation and 118/128/118 SQL assertions across subprocess,
-HTTP and Unix transports (five cases each). The existing metadata gate exits 2:
-99/100, L0, zero errors and two VGI417 warnings for oversized example-query tags
-on `reghive.main` and `read_hive`; structural and behavioral checks ran. This baseline
-metadata limitation is unchanged by the notebook-only change.
-
-The official Query.Farm Strata Sun wordmark and VGI logo are bundled unchanged in
-`assets/`; the wordmark links to Query.Farm at the top and final bottom of the notebook.
+The shared [notebook standard](https://github.com/Query-farm/vgi-example-notebooks/blob/main/docs/standard.md)
+owns branding, bootstrap, execution and SVG publication.

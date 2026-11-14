@@ -1,0 +1,9 @@
+{
+  "basis": "Full current registration:6scalars+2tablefunctions+1forensic_keys view. Complete release-to-current diff affects examples, metadata/tests and serde_json dev dependency only. Parser/core/adapters/signatures/reference rows unchanged. Current binary not built or run.",
+  "current_revision": "4da55b15a7591da922836e1447b1c7a59c4d56f9",
+  "released_revision": "v0.4.0",
+  "source_ci": 43582237231,
+  "exact_current_runtime_count": 0,
+  "catalog_complete": true,
+  "all_named_capabilities_included": true
+}

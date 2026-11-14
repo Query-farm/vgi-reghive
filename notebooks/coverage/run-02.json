@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "notebook_sha256": "848379e1f5cabce9f02b610b5ea4c8a05cd627b25e4cff1db99d65ca8064a875",
+  "catalog_sha256": "156ebca9faa2d09bcf050832b572a9117fb95cecb266f85471d6fde9219b5e41",
+  "worker_revision": "v0.4.0",
+  "status": "success",
+  "executed_at": "2026-11-14T20:18:01.667878+00:00",
+  "engine": "Haybarn2.0.0rc11 / native VGI Reghive v0.4.0",
+  "command": "uv run --locked vgi-notebooks --timeout300",
+  "catalog_aliases": [
+    "reghive"
+  ],
+  "cells": [
+    {
+      "id": "lookup-parameters",
+      "status": "success",
+      "execution_count": 1,
+      "source_sha256": "576de55b2c50fe0de990b8d48f843928b8f23ed933bd06b4ebce6e45d333d4dd",
+      "outputs_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "id": "install-tools",
+      "status": "success",
+      "execution_count": 2,
+      "source_sha256": "fd3fa1b40026e5d297f1c91441014e2141e92b982fef5b500dffefc42d642d5e",
+      "outputs_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "id": "lookup-setup",
+      "status": "success",
+      "execution_count": 3,
+      "source_sha256": "3506895f558f4d27a0c99b36d0de75a6901c23a1d872258b830ea103286f4d9c",
+      "outputs_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "id": "lookup-attach",
+      "status": "success",
+      "execution_count": 4,
+      "source_sha256": "7728b18d918fc46174f93291caa0361901530a955dafe5380f0bca03a63093d5",
+      "outputs_sha256": "21d34544a1bba688f61db3661c65ab3a3824e9910e648b8c38f9acd0741f9360"
+    },
+    {
+      "id": "reference-query",
+      "status": "success",
+      "execution_count": 5,
+      "source_sha256": "10c7a4a96092fcff0a5d459892b8a29031444f35c0462c388f0e1cf620a16c08",
+      "outputs_sha256": "a540c3fffe1a34730d809666a23b84e21936b12c2f509401cfa75d47dc912109"
+    },
+    {
+      "id": "reference-frame",
+      "status": "success",
+      "execution_count": 6,
+      "source_sha256": "f23efc0eaa56aea4a07b7f867a3022decd626a7e054142dba3e7d8a1c9c7456e",
+      "outputs_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "id": "reference-plot",
+      "status": "success",
+      "execution_count": 7,
+      "source_sha256": "b1d29cbc43e3029b903b3759a434fac02f0c17263d056df375adbac4fdefb028",
+      "outputs_sha256": "cad029546b9c8860cc4177f660fd3c9dcbd084fd4cc9ed5e60db8b00c9b2ac1c"
+    },
+    {
+      "id": "lookup-scalars",
+      "status": "success",
+      "execution_count": 8,
+      "source_sha256": "86fba03346ef8957807713988ecd048e0ed64a8332f201e0da638f9c21c1fc6a",
+      "outputs_sha256": "f7b4e5d87e7da9689005f46ba26c75b0eac755da11e9c5f77476f91e06e8f834"
+    },
+    {
+      "id": "subtree-literals",
+      "status": "success",
+      "execution_count": 9,
+      "source_sha256": "b77435f14299af522e9104953e7f30889d4f25636ee58b64aecaea8d14699696",
+      "outputs_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "id": "lookup-subtree",
+      "status": "success",
+      "execution_count": 10,
+      "source_sha256": "44aeef5318748e775e675e665f8e86a567892dad55a11331ae3a1b13aeb2dfe5",
+      "outputs_sha256": "afd6667402eca9488c3f783f1c16beb8504076d02b0f37afc294de5aa4dbef10"
+    },
+    {
+      "id": "lookup-summary-query",
+      "status": "success",
+      "execution_count": 11,
+      "source_sha256": "8270a406abaa38e9ab3d084e26a16968a1246b4f6ccb69cfea6123944ca6ed4b",
+      "outputs_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "id": "lookup-summary-prose",
+      "status": "success",
+      "execution_count": 12,
+      "source_sha256": "f669f521b606a52e767e4ccb40e712a6e104b15f0e6522635ffa14ef6868a72f",
+      "outputs_sha256": "0ed3efeff1fad77af6c1825cc93903b7255b6907dcf162ef5fe5f2393724bde0"
+    },
+    {
+      "id": "lookup-checks-query",
+      "status": "success",
+      "execution_count": 13,
+      "source_sha256": "23da52f774a7f6c02a3a6d91b06b7977e71f2754c7f4c05628995ee76dcc1043",
+      "outputs_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "id": "lookup-checks-display",
+      "status": "success",
+      "execution_count": 14,
+      "source_sha256": "14db5e9b1c5e126f541c786de7cebda4a847e4be5ed7bd9ac2ddd23cb76b7e7e",
+      "outputs_sha256": "fe0a64eda8a8f00f81dc08102fc5306e3698a45db9529fb35a148d658c7308e4"
+    },
+    {
+      "id": "lookup-close",
+      "status": "success",
+      "execution_count": 15,
+      "source_sha256": "94233b5be70370b0d42e726cb71b70449a140acdb522b4667aeef593a25b706a",
+      "outputs_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  ]
+}

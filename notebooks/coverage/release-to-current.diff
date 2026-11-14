@@ -1,0 +1,372 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index a256216..388f9ae 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -1948,6 +1948,7 @@ dependencies = [
+  "notatin",
+  "proptest",
+  "reghive-core",
++ "serde_json",
+  "vgi",
+  "vgi-rpc",
+ ]
+diff --git a/crates/reghive-worker/Cargo.toml b/crates/reghive-worker/Cargo.toml
+index 0dd84bb..673842c 100644
+--- a/crates/reghive-worker/Cargo.toml
++++ b/crates/reghive-worker/Cargo.toml
+@@ -42,3 +42,4 @@ vgi-rpc = { workspace = true, features = ["stream-codec"] }
+ 
+ [dev-dependencies]
+ proptest = "1"
++serde_json = "1"
+diff --git a/crates/reghive-worker/src/lib.rs b/crates/reghive-worker/src/lib.rs
+index f41474f..d78285b 100644
+--- a/crates/reghive-worker/src/lib.rs
++++ b/crates/reghive-worker/src/lib.rs
+@@ -50,10 +50,13 @@ fn catalog_metadata(name: &str) -> CatalogModel {
+     // hive inlined as a BLOB literal (so they bind AND run under
+     // `vgi-lint --execute`), plus a browse of the reference view. Each carries a
+     // description (VGI515) and projects columns rather than `SELECT *` (VGI514).
+-    // VGI417: the whole tag must stay under 4,000 characters, and the inline hive
+-    // costs ~2,700, so only one hive-backed example fits here; the hive_info probe
+-    // is shown in that function's own examples.
++    // VGI417: a vgi.example_queries tag must stay under 8,000 characters and the
++    // inline hive costs ~2,600 per example, so only two hive-backed examples fit
++    // here: the plain scan and the read_hive x forensic_keys join. The other
++    // composed examples (key_info coverage, header triage) live on the example
++    // lists of the functions that drive them.
+     let demo = sample::demo_hive_blob_sql();
++    let persistence_join = sample::persistence_join_example();
+     let read_hive_ex = format!(
+         "SELECT key_path, value_name, value_data \
+          FROM reghive.main.read_hive({demo}) \
+@@ -70,6 +73,7 @@ fn catalog_metadata(name: &str) -> CatalogModel {
+             "Browse the well-known persistence keys to triage first, with their ATT&CK technique.",
+             forensic_ex,
+         ),
++        (persistence_join.description, persistence_join.sql.as_str()),
+     ]);
+ 
+     CatalogModel {
+@@ -178,6 +182,25 @@ fn catalog_metadata(name: &str) -> CatalogModel {
+                     // Exercise the parsers' robustness contract: non-registry input
+                     // must yield an empty/NULL result, never an error. Each task
+                     // references a distinct object so every function is covered.
++                    // Composed tasks over the committed SOFTWARE fixture (the
++                    // same bytes as the inline demo hive in the examples): the
++                    // agent must combine a hive reader with the reference view.
++                    meta::AgentTask {
++                        name: "persistence_values_by_technique",
++                        prompt: "Scan the registry hive file tests/hives/software.hve and match \
++                                 its live (not deleted) values against the worker's reference \
++                                 list of well-known forensic registry keys. For the keys in the \
++                                 'Persistence' category, how many live values does the hive hold \
++                                 per MITRE ATT&CK technique? Return two columns, mitre_technique \
++                                 and n (the value count), one row per technique.",
++                    },
++                    meta::AgentTask {
++                        name: "missing_software_reference_keys",
++                        prompt: "Which of the worker's reference forensic registry keys that live \
++                                 in the SOFTWARE hive are absent from the hive file \
++                                 tests/hives/software.hve? Return one column named key_path, one \
++                                 row per missing key, ordered by key_path.",
++                    },
+                     meta::AgentTask {
+                         name: "read_hive_non_hive_empty",
+                         prompt: "The bulk hive reader must tolerate non-registry input without \
+@@ -313,3 +336,29 @@ fn catalog_metadata(name: &str) -> CatalogModel {
+         ..Default::default()
+     }
+ }
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    /// VGI417: every published `vgi.example_queries` list stays under vgi-lint's
++    /// 8,000-character bound even with the inline demo hive in composed examples.
++    #[test]
++    fn example_query_lists_fit_vgi417() {
++        let cat = catalog_metadata("reghive");
++        let schema = &cat.schemas[0];
++        let lists = schema
++            .tags
++            .iter()
++            .chain(schema.views.iter().flat_map(|v| v.tags.iter()))
++            .filter(|(k, _)| k == "vgi.example_queries");
++        let mut n = 0;
++        for (_, v) in lists {
++            n += 1;
++            assert!(v.len() < 8_000, "example list is {} chars", v.len());
++            let parsed: serde_json::Value = serde_json::from_str(v).expect("valid JSON");
++            assert!(parsed.as_array().is_some_and(|a| !a.is_empty()));
++        }
++        assert_eq!(n, 2, "schema + forensic_keys view lists");
++    }
++}
+diff --git a/crates/reghive-worker/src/sample.rs b/crates/reghive-worker/src/sample.rs
+index 11d551b..8c73a4d 100644
+--- a/crates/reghive-worker/src/sample.rs
++++ b/crates/reghive-worker/src/sample.rs
+@@ -73,6 +73,72 @@ fn compact_blob_sql(bytes: &[u8]) -> String {
+ /// emits it). Handy for the `hive_subtree` / `hive_key` examples.
+ pub const DEMO_RUN_KEY_PATH: &str = "Software\\Microsoft\\Windows\\CurrentVersion\\Run";
+ 
++/// A composed example: a `(description, sql)` pair that combines two or more of
++/// the worker's own objects in one query. Each is defined once here and
++/// referenced from the schema list and from the example list of the object that
++/// drives it, so the copies cannot drift.
++pub struct ComposedExample {
++    pub description: &'static str,
++    pub sql: String,
++}
++
++/// `read_hive` joined to the `forensic_keys` reference view: label every live
++/// value of the demo hive that sits under a well-known forensic key with that
++/// key's ATT&CK technique. On the demo hive this is the five Run-key values.
++pub fn persistence_join_example() -> ComposedExample {
++    let demo = demo_hive_blob_sql();
++    ComposedExample {
++        description: "Join a hive scan to the forensic_keys reference to label every live value \
++                      sitting under a well-known forensic key with its ATT&CK technique (here: \
++                      the five Run-key values, T1547.001).",
++        sql: format!(
++            "SELECT f.mitre_technique, r.key_path, r.value_name, r.value_type, r.value_data \
++             FROM reghive.main.read_hive({demo}) AS r \
++             JOIN reghive.main.forensic_keys AS f ON r.key_path = f.key_path \
++             WHERE NOT r.is_deleted ORDER BY r.value_name"
++        ),
++    }
++}
++
++/// `key_info` evaluated for every SOFTWARE-hive row of `forensic_keys`: a
++/// coverage report saying which reference keys the hive actually has, with
++/// their value count and last-write time, without materializing any values.
++pub fn key_coverage_example() -> ComposedExample {
++    let demo = demo_hive_blob_sql();
++    ComposedExample {
++        description: "Coverage check: probe every SOFTWARE-hive key from the forensic_keys \
++                      reference with key_info, reporting which ones the hive contains plus their \
++                      value count and last-write time (only the Run key is present here).",
++        sql: format!(
++            "SELECT k.key_path, k.info IS NOT NULL AS present, k.info.value_count AS value_count, \
++             k.info.last_write AS last_write \
++             FROM (SELECT f.key_path, reghive.main.key_info({demo}, f.key_path) AS info \
++             FROM reghive.main.forensic_keys AS f WHERE f.hive = 'SOFTWARE') AS k \
++             ORDER BY k.key_path"
++        ),
++    }
++}
++
++/// `well_formed` + `hive_info` over one blob: the two header probes an analyst
++/// runs before trusting a hive — is it a valid regf file, which hive is it, and
++/// does it need transaction-log replay?
++pub fn header_triage_example() -> ComposedExample {
++    let demo = demo_hive_blob_sql();
++    ComposedExample {
++        description: "Header triage in one pass: validate a hive with well_formed, then read its \
++                      type and dirty flag from hive_info to decide whether it needs \
++                      transaction-log replay (the demo SOFTWARE hive is valid and clean).",
++        sql: format!(
++            "WITH h AS (SELECT {demo} AS b) \
++             SELECT (reghive.main.well_formed(b)).ok AS ok, \
++             (reghive.main.well_formed(b)).kind AS kind, \
++             (reghive.main.hive_info(b)).hive_type AS hive_type, \
++             (reghive.main.hive_info(b)).is_dirty AS needs_log_replay \
++             FROM h ORDER BY hive_type"
++        ),
++    }
++}
++
+ /// A curated reference of well-known Windows Registry forensic locations, exposed
+ /// as a VALUES-backed [`CatView`]. Browsable with a plain scan (no file, no
+ /// credential); an analyst reads it to learn *which* key paths to pull from a
+@@ -112,19 +178,20 @@ SELECT * FROM (VALUES \
+     // facets stay a small shared set rather than unique per object.
+     tags.push(("domain".to_string(), "security-and-forensics".to_string()));
+     tags.push(("topic".to_string(), "dfir-triage".to_string()));
++    let join = persistence_join_example();
+     tags.push((
+         "vgi.example_queries".to_string(),
+-        r#"[
+-  {
+-    "description": "List the persistence-related registry keys to triage first, with their ATT&CK technique.",
+-    "sql": "SELECT key_path, description, mitre_technique FROM reghive.main.forensic_keys WHERE category = 'Persistence' ORDER BY key_path"
+-  },
+-  {
+-    "description": "Count the well-known forensic keys grouped by triage category.",
+-    "sql": "SELECT category, count(*) AS n FROM reghive.main.forensic_keys GROUP BY category ORDER BY n DESC, category"
+-  }
+-]"#
+-        .to_string(),
++        crate::meta::example_queries_json(&[
++            (
++                "List the persistence-related registry keys to triage first, with their ATT&CK technique.",
++                "SELECT key_path, description, mitre_technique FROM reghive.main.forensic_keys WHERE category = 'Persistence' ORDER BY key_path",
++            ),
++            (
++                "Count the well-known forensic keys grouped by triage category.",
++                "SELECT category, count(*) AS n FROM reghive.main.forensic_keys GROUP BY category ORDER BY n DESC, category",
++            ),
++            (join.description, join.sql.as_str()),
++        ]),
+     ));
+ 
+     CatView {
+diff --git a/crates/reghive-worker/src/scalar/hive_info.rs b/crates/reghive-worker/src/scalar/hive_info.rs
+index 18a0637..250e6bb 100644
+--- a/crates/reghive-worker/src/scalar/hive_info.rs
++++ b/crates/reghive-worker/src/scalar/hive_info.rs
+@@ -41,16 +41,26 @@ impl ScalarFunction for HiveInfo {
+     }
+ 
+     fn metadata(&self) -> FunctionMetadata {
++        // Composed example driven by this function (defined once in sample.rs).
++        let composed = crate::sample::header_triage_example();
+         FunctionMetadata {
+             description: "Summarize a hive's base block: type, version, sequence numbers, dirty \
+                           flag, and last-written time"
+                 .into(),
+-            examples: vec![FunctionExample {
+-                sql: "SELECT reghive.main.hive_info('\\x72656766'::BLOB);".into(),
+-                description: "Probe a hive's base-block summary (returns NULL on a non-hive blob)."
+-                    .into(),
+-                expected_output: None,
+-            }],
++            examples: vec![
++                FunctionExample {
++                    sql: "SELECT reghive.main.hive_info('\\x72656766'::BLOB);".into(),
++                    description:
++                        "Probe a hive's base-block summary (returns NULL on a non-hive blob)."
++                            .into(),
++                    expected_output: None,
++                },
++                FunctionExample {
++                    sql: composed.sql.clone(),
++                    description: composed.description.into(),
++                    expected_output: None,
++                },
++            ],
+             tags: {
+                 let mut tags = crate::meta::object_tags(
+                     "Hive Header Summary",
+@@ -70,10 +80,13 @@ impl ScalarFunction for HiveInfo {
+                 // drops descriptions, so publish the same query with one here.
+                 tags.push((
+                     "vgi.example_queries".to_string(),
+-                    crate::meta::example_queries_json(&[(
+-                        "Probe a hive's base-block summary (returns NULL on a non-hive blob).",
+-                        "SELECT reghive.main.hive_info('\\x72656766'::BLOB);",
+-                    )]),
++                    crate::meta::example_queries_json(&[
++                        (
++                            "Probe a hive's base-block summary (returns NULL on a non-hive blob).",
++                            "SELECT reghive.main.hive_info('\\x72656766'::BLOB);",
++                        ),
++                        (composed.description, composed.sql.as_str()),
++                    ]),
+                 ));
+                 tags
+             },
+diff --git a/crates/reghive-worker/src/scalar/key_info.rs b/crates/reghive-worker/src/scalar/key_info.rs
+index ee7a92e..9692d66 100644
+--- a/crates/reghive-worker/src/scalar/key_info.rs
++++ b/crates/reghive-worker/src/scalar/key_info.rs
+@@ -37,15 +37,26 @@ impl ScalarFunction for KeyInfo {
+     }
+ 
+     fn metadata(&self) -> FunctionMetadata {
++        // Composed example driven by this function (defined once in sample.rs).
++        let composed = crate::sample::key_coverage_example();
+         FunctionMetadata {
+             description: "Return a key's metadata (last_write, subkey_count, value_count, \
+                           class_name, is_deleted) without materializing its values"
+                 .into(),
+-            examples: vec![FunctionExample {
+-                sql: "SELECT reghive.main.key_info('regf'::BLOB, 'Software\\Microsoft');".into(),
+-                description: "Cheap key-metadata pivot (NULL struct for a non-hive blob).".into(),
+-                expected_output: None,
+-            }],
++            examples: vec![
++                FunctionExample {
++                    sql: "SELECT reghive.main.key_info('regf'::BLOB, 'Software\\Microsoft');"
++                        .into(),
++                    description: "Cheap key-metadata pivot (NULL struct for a non-hive blob)."
++                        .into(),
++                    expected_output: None,
++                },
++                FunctionExample {
++                    sql: composed.sql.clone(),
++                    description: composed.description.into(),
++                    expected_output: None,
++                },
++            ],
+             tags: {
+                 let mut tags = crate::meta::object_tags(
+                     "Key Metadata",
+@@ -63,10 +74,13 @@ impl ScalarFunction for KeyInfo {
+                 // VGI515: described-example carrier for the native example above.
+                 tags.push((
+                     "vgi.example_queries".to_string(),
+-                    crate::meta::example_queries_json(&[(
+-                        "Cheap key-metadata pivot (NULL struct for a non-hive blob).",
+-                        "SELECT reghive.main.key_info('regf'::BLOB, 'Software\\Microsoft');",
+-                    )]),
++                    crate::meta::example_queries_json(&[
++                        (
++                            "Cheap key-metadata pivot (NULL struct for a non-hive blob).",
++                            "SELECT reghive.main.key_info('regf'::BLOB, 'Software\\Microsoft');",
++                        ),
++                        (composed.description, composed.sql.as_str()),
++                    ]),
+                 ));
+                 tags
+             },
+diff --git a/crates/reghive-worker/src/table/read_hive.rs b/crates/reghive-worker/src/table/read_hive.rs
+index cec922f..783bd99 100644
+--- a/crates/reghive-worker/src/table/read_hive.rs
++++ b/crates/reghive-worker/src/table/read_hive.rs
+@@ -76,18 +76,36 @@ impl TableFunction for ReadHive {
+         );
+         let example_desc = "Scan a whole hive and pull the Run-key persistence value (Updater) it \
+                             plants — the bread-and-butter triage query.";
+-        // VGI515: described-example carrier for the native example below.
++        // Composed: the scan joined to the forensic_keys reference view.
++        let join = crate::sample::persistence_join_example();
++        // VGI515: described-example carrier for the native examples below.
+         tags.push((
+             "vgi.example_queries".into(),
+-            crate::meta::example_queries_json(&[(example_desc, example_sql.as_str())]),
++            crate::meta::example_queries_json(&[
++                (example_desc, example_sql.as_str()),
++                (join.description, join.sql.as_str()),
++            ]),
++        ));
++        // VGI509: the composed join is offline and deterministic (inline hive +
++        // VALUES-backed view), so it is also a guaranteed-runnable example.
++        tags.push((
++            "vgi.executable_examples".into(),
++            crate::meta::example_queries_json(&[(join.description, join.sql.as_str())]),
+         ));
+         FunctionMetadata {
+             description: "Read regf registry hives (glob or BLOB) into typed key/value rows".into(),
+-            examples: vec![FunctionExample {
+-                sql: example_sql.clone(),
+-                description: example_desc.into(),
+-                expected_output: None,
+-            }],
++            examples: vec![
++                FunctionExample {
++                    sql: example_sql.clone(),
++                    description: example_desc.into(),
++                    expected_output: None,
++                },
++                FunctionExample {
++                    sql: join.sql.clone(),
++                    description: join.description.into(),
++                    expected_output: None,
++                },
++            ],
+             tags,
+             ..Default::default()
+         }

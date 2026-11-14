@@ -1,0 +1,375 @@
+{
+  "schema_version": 1,
+  "catalogs": {
+    "released": {
+      "path": "coverage/catalog-release.json",
+      "sha256": "156ebca9faa2d09bcf050832b572a9117fb95cecb266f85471d6fde9219b5e41",
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T20:18:25.915431+00:00",
+        "catalog_sha256": "156ebca9faa2d09bcf050832b572a9117fb95cecb266f85471d6fde9219b5e41",
+        "notes": "Complete actual v0.4.0 exports: six scalars, two table functions and one forensic_keys view. All named surfaces retained; no capability exclusions."
+      }
+    },
+    "current": {
+      "path": "coverage/catalog-current.json",
+      "sha256": "5524a47b9b7220f9a3ab98c3208c89c1f5e198c65c5b30aeb02ac486096dbd58",
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T20:18:25.915431+00:00",
+        "catalog_sha256": "5524a47b9b7220f9a3ab98c3208c89c1f5e198c65c5b30aeb02ac486096dbd58",
+        "notes": "Complete registration and reference-view source review at4da55b15a7591da922836e1447b1c7a59c4d56f9. Full source diff changes metadata/examples/tests and one dev dependency only; parser, adapters, signatures and reference rows unchanged. Exact current binary execution is not claimed."
+      }
+    }
+  },
+  "notebooks": [
+    {
+      "path": "01_recovery_changes_the_evidence_population.ipynb",
+      "sha256": "31ddd8ec1aabe661a1349472add214b0dad92d9f6e034d35d83ef6c5f99a6636",
+      "execution": {
+        "path": "coverage/run-01.json",
+        "sha256": "05ea79c8e32339360c32b2bfe51182ee331749c30c532ca2c375818ccc9266a2"
+      }
+    },
+    {
+      "path": "02_a_missing_key_needs_a_search_scope.ipynb",
+      "sha256": "848379e1f5cabce9f02b610b5ea4c8a05cd627b25e4cff1db99d65ca8064a875",
+      "execution": {
+        "path": "coverage/run-02.json",
+        "sha256": "ed7cbc56d24620cb99a3f72b7a402b91ca1b3ef607dda3ca66d2c7620b2f2c41"
+      }
+    }
+  ],
+  "examples": [
+    {
+      "object": {
+        "schema": "main",
+        "name": "well_formed"
+      },
+      "notebook": "01_recovery_changes_the_evidence_population.ipynb",
+      "sql": [
+        {
+          "cell": "81d2b02f",
+          "reference": "reghive.main.well_formed"
+        }
+      ],
+      "narrative_cells": [
+        "917d0525",
+        "c059f38c"
+      ],
+      "result_cells": [
+        "81d2b02f",
+        "2afb31ec"
+      ],
+      "interpretation_cells": [
+        "2afb31ec"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T20:18:25.915431+00:00",
+        "notebook_sha256": "31ddd8ec1aabe661a1349472add214b0dad92d9f6e034d35d83ef6c5f99a6636",
+        "catalog_sha256": [
+          "156ebca9faa2d09bcf050832b572a9117fb95cecb266f85471d6fde9219b5e41",
+          "5524a47b9b7220f9a3ab98c3208c89c1f5e198c65c5b30aeb02ac486096dbd58"
+        ],
+        "purpose": "Keep malformed, empty and missing input separate from recognized hive headers.",
+        "finding": "Six input records survive; three have recognized headers. Invalid and absent inputs are not treated as hives with zero settings. Header validity does not certify all hive cells."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "hive_info"
+      },
+      "notebook": "01_recovery_changes_the_evidence_population.ipynb",
+      "sql": [
+        {
+          "cell": "81d2b02f",
+          "reference": "reghive.main.hive_info"
+        }
+      ],
+      "narrative_cells": [
+        "c059f38c"
+      ],
+      "result_cells": [
+        "81d2b02f",
+        "2afb31ec"
+      ],
+      "interpretation_cells": [
+        "2afb31ec"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T20:18:25.915431+00:00",
+        "notebook_sha256": "31ddd8ec1aabe661a1349472add214b0dad92d9f6e034d35d83ef6c5f99a6636",
+        "catalog_sha256": [
+          "156ebca9faa2d09bcf050832b572a9117fb95cecb266f85471d6fde9219b5e41",
+          "5524a47b9b7220f9a3ab98c3208c89c1f5e198c65c5b30aeb02ac486096dbd58"
+        ],
+        "purpose": "Distinguish a dirty but recognized header from malformed bytes.",
+        "finding": "SYSTEM dirty fixture has unequal sequences but a readable header. The chart retains dirty context separately from clean files. Current measurements are fixed synthetic headers, not live acquisition evidence."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "logs_applied"
+      },
+      "notebook": "01_recovery_changes_the_evidence_population.ipynb",
+      "sql": [
+        {
+          "cell": "81d2b02f",
+          "reference": "reghive.main.logs_applied"
+        }
+      ],
+      "narrative_cells": [
+        "c059f38c",
+        "a21f74b1"
+      ],
+      "result_cells": [
+        "81d2b02f",
+        "17b54875"
+      ],
+      "interpretation_cells": [
+        "2afb31ec",
+        "17b54875"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T20:18:25.915431+00:00",
+        "notebook_sha256": "31ddd8ec1aabe661a1349472add214b0dad92d9f6e034d35d83ef6c5f99a6636",
+        "catalog_sha256": [
+          "156ebca9faa2d09bcf050832b572a9117fb95cecb266f85471d6fde9219b5e41",
+          "5524a47b9b7220f9a3ab98c3208c89c1f5e198c65c5b30aeb02ac486096dbd58"
+        ],
+        "purpose": "Inspect no-log replay diagnostics without implying a dirty hive was repaired.",
+        "finding": "Explicitly absent logs yield applied=false and replayed0 on recognized hives. This is a meaningful no-log example; successful log replay is not claimed and missing transactions remain unknown."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "read_hive"
+      },
+      "notebook": "01_recovery_changes_the_evidence_population.ipynb",
+      "sql": [
+        {
+          "cell": "e098f5b3",
+          "reference": "reghive.main.read_hive"
+        }
+      ],
+      "narrative_cells": [
+        "1a11f934",
+        "2d752e69"
+      ],
+      "result_cells": [
+        "e098f5b3",
+        "ddbb6735"
+      ],
+      "interpretation_cells": [
+        "ddbb6735",
+        "017e45d8"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T20:18:25.915431+00:00",
+        "notebook_sha256": "31ddd8ec1aabe661a1349472add214b0dad92d9f6e034d35d83ef6c5f99a6636",
+        "catalog_sha256": [
+          "156ebca9faa2d09bcf050832b572a9117fb95cecb266f85471d6fde9219b5e41",
+          "5524a47b9b7220f9a3ab98c3208c89c1f5e198c65c5b30aeb02ac486096dbd58"
+        ],
+        "purpose": "Materialize one population with explicit recovery scope and retain provenance.",
+        "finding": "Nine allocated value rows remain across three hives; key-only rows are excluded using value_type. Turning recovery on adds two representations of the same Trace content with distinct provenance labels, not two independently proven deletion events."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "forensic_keys"
+      },
+      "notebook": "02_a_missing_key_needs_a_search_scope.ipynb",
+      "sql": [
+        {
+          "cell": "reference-query",
+          "reference": "reghive.main.forensic_keys"
+        }
+      ],
+      "narrative_cells": [
+        "reference-notes"
+      ],
+      "result_cells": [
+        "reference-query",
+        "reference-plot"
+      ],
+      "interpretation_cells": [
+        "reference-plot",
+        "lookup-experiment"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T20:18:25.915431+00:00",
+        "notebook_sha256": "848379e1f5cabce9f02b610b5ea4c8a05cd627b25e4cff1db99d65ca8064a875",
+        "catalog_sha256": [
+          "156ebca9faa2d09bcf050832b572a9117fb95cecb266f85471d6fde9219b5e41",
+          "5524a47b9b7220f9a3ab98c3208c89c1f5e198c65c5b30aeb02ac486096dbd58"
+        ],
+        "purpose": "Use the SOFTWARE reference as an explicit population and source of exact key paths.",
+        "finding": "All four reference locations remain in the output. Run is present; RunOnce, Winlogon and Uninstall are not found. The reference does not assert that those keys exist or that a matching program is malicious."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "key_info"
+      },
+      "notebook": "02_a_missing_key_needs_a_search_scope.ipynb",
+      "sql": [
+        {
+          "cell": "reference-query",
+          "reference": "reghive.main.key_info"
+        }
+      ],
+      "narrative_cells": [
+        "reference-notes"
+      ],
+      "result_cells": [
+        "reference-query",
+        "reference-plot"
+      ],
+      "interpretation_cells": [
+        "reference-plot"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T20:18:25.915431+00:00",
+        "notebook_sha256": "848379e1f5cabce9f02b610b5ea4c8a05cd627b25e4cff1db99d65ca8064a875",
+        "catalog_sha256": [
+          "156ebca9faa2d09bcf050832b572a9117fb95cecb266f85471d6fde9219b5e41",
+          "5524a47b9b7220f9a3ab98c3208c89c1f5e198c65c5b30aeb02ac486096dbd58"
+        ],
+        "purpose": "Probe presence and metadata before detailed value extraction.",
+        "finding": "One present key reports five values. Three absent key structures and value counts stay NULL; the plot draws no zero-valued marker for them. Fixed key timestamps are not interpreted as deletion or execution times."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "hive_key"
+      },
+      "notebook": "02_a_missing_key_needs_a_search_scope.ipynb",
+      "sql": [
+        {
+          "cell": "lookup-scalars",
+          "reference": "reghive.main.hive_key"
+        }
+      ],
+      "narrative_cells": [
+        "lookup-levels-notes",
+        "lookup-check-notes"
+      ],
+      "result_cells": [
+        "lookup-scalars",
+        "lookup-checks-display"
+      ],
+      "interpretation_cells": [
+        "lookup-summary-prose",
+        "lookup-checks-display"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T20:18:25.915431+00:00",
+        "notebook_sha256": "848379e1f5cabce9f02b610b5ea4c8a05cd627b25e4cff1db99d65ca8064a875",
+        "catalog_sha256": [
+          "156ebca9faa2d09bcf050832b572a9117fb95cecb266f85471d6fde9219b5e41",
+          "5524a47b9b7220f9a3ab98c3208c89c1f5e198c65c5b30aeb02ac486096dbd58"
+        ],
+        "purpose": "Retrieve the selected key with nested values and reconcile its declared and returned counts.",
+        "finding": "Run returns five nested values matching the five subtree value rows. RunOnce returns a NULL key rather than an empty known key. Recovery-scope equivalence is asserted only for this known live fixture key."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "hive_value"
+      },
+      "notebook": "02_a_missing_key_needs_a_search_scope.ipynb",
+      "sql": [
+        {
+          "cell": "lookup-scalars",
+          "reference": "reghive.main.hive_value"
+        }
+      ],
+      "narrative_cells": [
+        "lookup-levels-notes",
+        "lookup-check-notes"
+      ],
+      "result_cells": [
+        "lookup-scalars",
+        "lookup-checks-display"
+      ],
+      "interpretation_cells": [
+        "lookup-summary-prose",
+        "lookup-checks-display"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T20:18:25.915431+00:00",
+        "notebook_sha256": "848379e1f5cabce9f02b610b5ea4c8a05cd627b25e4cff1db99d65ca8064a875",
+        "catalog_sha256": [
+          "156ebca9faa2d09bcf050832b572a9117fb95cecb266f85471d6fde9219b5e41",
+          "5524a47b9b7220f9a3ab98c3208c89c1f5e198c65c5b30aeb02ac486096dbd58"
+        ],
+        "purpose": "Retrieve one named value and compare its raw bytes with the relational scan.",
+        "finding": "Updater is REG_SZ and its text/raw byte count are displayed without executing it. Its raw bytes match the subtree result; the RunOnce experiment returns NULL and no corresponding row."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "hive_subtree"
+      },
+      "notebook": "02_a_missing_key_needs_a_search_scope.ipynb",
+      "sql": [
+        {
+          "cell": "lookup-subtree",
+          "reference": "reghive.main.hive_subtree"
+        }
+      ],
+      "narrative_cells": [
+        "lookup-levels-notes",
+        "lookup-check-notes"
+      ],
+      "result_cells": [
+        "lookup-subtree",
+        "lookup-summary-prose",
+        "lookup-checks-display"
+      ],
+      "interpretation_cells": [
+        "lookup-summary-prose",
+        "lookup-experiment"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T20:18:25.915431+00:00",
+        "notebook_sha256": "848379e1f5cabce9f02b610b5ea4c8a05cd627b25e4cff1db99d65ca8064a875",
+        "catalog_sha256": [
+          "156ebca9faa2d09bcf050832b572a9117fb95cecb266f85471d6fde9219b5e41",
+          "5524a47b9b7220f9a3ab98c3208c89c1f5e198c65c5b30aeb02ac486096dbd58"
+        ],
+        "purpose": "Scan one exact selected path with explicit log/recovery options and compare representation populations.",
+        "finding": "The constant BLOB/path arguments are formatted from already-loaded fixture/reference tables. Run yields five typed live values; RunOnce yields none, while the full reference audit is unchanged. Empty results are interpreted only within the validated file and selected path."
+      }
+    }
+  ]
+}

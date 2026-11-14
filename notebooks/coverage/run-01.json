@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "notebook_sha256": "31ddd8ec1aabe661a1349472add214b0dad92d9f6e034d35d83ef6c5f99a6636",
+  "catalog_sha256": "156ebca9faa2d09bcf050832b572a9117fb95cecb266f85471d6fde9219b5e41",
+  "worker_revision": "v0.4.0",
+  "status": "success",
+  "executed_at": "2026-11-14T20:18:01.667878+00:00",
+  "engine": "Haybarn2.0.0rc11 / native VGI Reghive v0.4.0",
+  "command": "uv run --locked vgi-notebooks --timeout300",
+  "catalog_aliases": [
+    "reghive"
+  ],
+  "cells": [
+    {
+      "id": "1c65e511",
+      "status": "success",
+      "execution_count": 1,
+      "source_sha256": "67361c7f78eec7b892707db54e6ae2b2ff744bd61085bbcd32d0d6a422dbec81",
+      "outputs_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "id": "install-tools",
+      "status": "success",
+      "execution_count": 2,
+      "source_sha256": "fd3fa1b40026e5d297f1c91441014e2141e92b982fef5b500dffefc42d642d5e",
+      "outputs_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "id": "173e155e",
+      "status": "success",
+      "execution_count": 3,
+      "source_sha256": "598ac3346634c5ede87a0afac3283767bc5a6f318fb079bd34ef6586ce970387",
+      "outputs_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "id": "705634df",
+      "status": "success",
+      "execution_count": 4,
+      "source_sha256": "9478d30eaff6a08e74c5366ccc1208f6ff369fcabd798bfc19d3d611a9c4ef4b",
+      "outputs_sha256": "44de137c4619e1982bbf969b22dd8e178abf74f8c44dc45b80705882fe7b1fb2"
+    },
+    {
+      "id": "81d2b02f",
+      "status": "success",
+      "execution_count": 5,
+      "source_sha256": "2fe62517e59c04ba7f025d6a697403c6df5ab8b7a38d7c76624df1e3058a5c83",
+      "outputs_sha256": "613b333bc18a715face3f5ff3be6eb9b54b93a449d6746b51b45a391e9e8b399"
+    },
+    {
+      "id": "6338f1cc",
+      "status": "success",
+      "execution_count": 6,
+      "source_sha256": "2ef73ccc5518c07cc4d9ce1495a13bb66099e08aa86905f70115c536b8a9b0c7",
+      "outputs_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "id": "2afb31ec",
+      "status": "success",
+      "execution_count": 7,
+      "source_sha256": "12530c00a5e9d393ccc1c0e49b258a151eec3898108ce6b85132b4fd89b34987",
+      "outputs_sha256": "1c4cfe3edaf6f65b69b9490419a8c8abca0a64e3e154ef48fe1f4f93a293d332"
+    },
+    {
+      "id": "e098f5b3",
+      "status": "success",
+      "execution_count": 8,
+      "source_sha256": "21a30a259989b7342dfd6f063fb098cc33276ec85531873482525a9a3e355ca1",
+      "outputs_sha256": "c3e2d5846cf11ad3b16d3dc32c9620a325533934795958776de971380077b127"
+    },
+    {
+      "id": "278a3c20",
+      "status": "success",
+      "execution_count": 9,
+      "source_sha256": "7fc7a20ac885e96ccc797d76e7f5ce02a1422268ae2e684cce07a32346b55250",
+      "outputs_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "id": "ddbb6735",
+      "status": "success",
+      "execution_count": 10,
+      "source_sha256": "b995d595078456b2d3ab69971e2993bd80b29e26e44cd1bf81a07a0d0a320919",
+      "outputs_sha256": "db2f18d69613d840ff8b4c2127182dee4ab4a2bed159f95f98331833e526c5e7"
+    },
+    {
+      "id": "d9381f51",
+      "status": "success",
+      "execution_count": 11,
+      "source_sha256": "a17fae413aa5a9e4f4daed7834527cc4978482128d433cb94b625e48a211fb36",
+      "outputs_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "id": "17b54875",
+      "status": "success",
+      "execution_count": 12,
+      "source_sha256": "cd5eda335307254de04aee36758aabb1149e055d19c866995cc523ca18815e14",
+      "outputs_sha256": "68b4ab478a71f014f09d9316eba8d836fcac1fd2cd8c62c64b1365ee3c196b83"
+    },
+    {
+      "id": "cbb51988",
+      "status": "success",
+      "execution_count": 13,
+      "source_sha256": "94233b5be70370b0d42e726cb71b70449a140acdb522b4667aeef593a25b706a",
+      "outputs_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  ]
+}
