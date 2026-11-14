@@ -41,16 +41,26 @@ impl ScalarFunction for HiveInfo {
     }
 
     fn metadata(&self) -> FunctionMetadata {
+        // Composed example driven by this function (defined once in sample.rs).
+        let composed = crate::sample::header_triage_example();
         FunctionMetadata {
             description: "Summarize a hive's base block: type, version, sequence numbers, dirty \
                           flag, and last-written time"
                 .into(),
-            examples: vec![FunctionExample {
-                sql: "SELECT reghive.main.hive_info('\\x72656766'::BLOB);".into(),
-                description: "Probe a hive's base-block summary (returns NULL on a non-hive blob)."
-                    .into(),
-                expected_output: None,
-            }],
+            examples: vec![
+                FunctionExample {
+                    sql: "SELECT reghive.main.hive_info('\\x72656766'::BLOB);".into(),
+                    description:
+                        "Probe a hive's base-block summary (returns NULL on a non-hive blob)."
+                            .into(),
+                    expected_output: None,
+                },
+                FunctionExample {
+                    sql: composed.sql.clone(),
+                    description: composed.description.into(),
+                    expected_output: None,
+                },
+            ],
             tags: {
                 let mut tags = crate::meta::object_tags(
                     "Hive Header Summary",
@@ -70,10 +80,13 @@ impl ScalarFunction for HiveInfo {
                 // drops descriptions, so publish the same query with one here.
                 tags.push((
                     "vgi.example_queries".to_string(),
-                    crate::meta::example_queries_json(&[(
-                        "Probe a hive's base-block summary (returns NULL on a non-hive blob).",
-                        "SELECT reghive.main.hive_info('\\x72656766'::BLOB);",
-                    )]),
+                    crate::meta::example_queries_json(&[
+                        (
+                            "Probe a hive's base-block summary (returns NULL on a non-hive blob).",
+                            "SELECT reghive.main.hive_info('\\x72656766'::BLOB);",
+                        ),
+                        (composed.description, composed.sql.as_str()),
+                    ]),
                 ));
                 tags
             },

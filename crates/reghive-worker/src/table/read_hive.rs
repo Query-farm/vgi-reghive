@@ -76,18 +76,36 @@ impl TableFunction for ReadHive {
         );
         let example_desc = "Scan a whole hive and pull the Run-key persistence value (Updater) it \
                             plants — the bread-and-butter triage query.";
-        // VGI515: described-example carrier for the native example below.
+        // Composed: the scan joined to the forensic_keys reference view.
+        let join = crate::sample::persistence_join_example();
+        // VGI515: described-example carrier for the native examples below.
         tags.push((
             "vgi.example_queries".into(),
-            crate::meta::example_queries_json(&[(example_desc, example_sql.as_str())]),
+            crate::meta::example_queries_json(&[
+                (example_desc, example_sql.as_str()),
+                (join.description, join.sql.as_str()),
+            ]),
+        ));
+        // VGI509: the composed join is offline and deterministic (inline hive +
+        // VALUES-backed view), so it is also a guaranteed-runnable example.
+        tags.push((
+            "vgi.executable_examples".into(),
+            crate::meta::example_queries_json(&[(join.description, join.sql.as_str())]),
         ));
         FunctionMetadata {
             description: "Read regf registry hives (glob or BLOB) into typed key/value rows".into(),
-            examples: vec![FunctionExample {
-                sql: example_sql.clone(),
-                description: example_desc.into(),
-                expected_output: None,
-            }],
+            examples: vec![
+                FunctionExample {
+                    sql: example_sql.clone(),
+                    description: example_desc.into(),
+                    expected_output: None,
+                },
+                FunctionExample {
+                    sql: join.sql.clone(),
+                    description: join.description.into(),
+                    expected_output: None,
+                },
+            ],
             tags,
             ..Default::default()
         }

@@ -27,7 +27,7 @@ crates/
     src/main.rs            # bootstrap + catalog metadata; registers scalars + tables
     src/arrow_map.rs       # §output schema + Row → RecordBatch; struct field sets
     src/hive/{open,walk,value}.rs   # notatin open (logs+recover), tree walk → rows, value decode
-    src/scalar/*.rs        # hive_key, hive_value, key_info, hive_info, well_formed, logs_applied, version
+    src/scalar/*.rs        # hive_key, hive_value, key_info, hive_info, well_formed, logs_applied
     src/table/*.rs         # read_hive (glob cursor + resume), hive_subtree, common (glob/sibling-logs)
     tests/integration.rs   # golden fixtures: coercion, deleted recovery, dirty hive, subtree, sensitivity
     tests/fuzz_open.rs     # zero-panic proptest over the notatin open path

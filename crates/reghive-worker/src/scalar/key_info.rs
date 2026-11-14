@@ -37,15 +37,26 @@ impl ScalarFunction for KeyInfo {
     }
 
     fn metadata(&self) -> FunctionMetadata {
+        // Composed example driven by this function (defined once in sample.rs).
+        let composed = crate::sample::key_coverage_example();
         FunctionMetadata {
             description: "Return a key's metadata (last_write, subkey_count, value_count, \
                           class_name, is_deleted) without materializing its values"
                 .into(),
-            examples: vec![FunctionExample {
-                sql: "SELECT reghive.main.key_info('regf'::BLOB, 'Software\\Microsoft');".into(),
-                description: "Cheap key-metadata pivot (NULL struct for a non-hive blob).".into(),
-                expected_output: None,
-            }],
+            examples: vec![
+                FunctionExample {
+                    sql: "SELECT reghive.main.key_info('regf'::BLOB, 'Software\\Microsoft');"
+                        .into(),
+                    description: "Cheap key-metadata pivot (NULL struct for a non-hive blob)."
+                        .into(),
+                    expected_output: None,
+                },
+                FunctionExample {
+                    sql: composed.sql.clone(),
+                    description: composed.description.into(),
+                    expected_output: None,
+                },
+            ],
             tags: {
                 let mut tags = crate::meta::object_tags(
                     "Key Metadata",
@@ -63,10 +74,13 @@ impl ScalarFunction for KeyInfo {
                 // VGI515: described-example carrier for the native example above.
                 tags.push((
                     "vgi.example_queries".to_string(),
-                    crate::meta::example_queries_json(&[(
-                        "Cheap key-metadata pivot (NULL struct for a non-hive blob).",
-                        "SELECT reghive.main.key_info('regf'::BLOB, 'Software\\Microsoft');",
-                    )]),
+                    crate::meta::example_queries_json(&[
+                        (
+                            "Cheap key-metadata pivot (NULL struct for a non-hive blob).",
+                            "SELECT reghive.main.key_info('regf'::BLOB, 'Software\\Microsoft');",
+                        ),
+                        (composed.description, composed.sql.as_str()),
+                    ]),
                 ));
                 tags
             },

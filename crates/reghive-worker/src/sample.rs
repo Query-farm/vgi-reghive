@@ -73,6 +73,72 @@ fn compact_blob_sql(bytes: &[u8]) -> String {
 /// emits it). Handy for the `hive_subtree` / `hive_key` examples.
 pub const DEMO_RUN_KEY_PATH: &str = "Software\\Microsoft\\Windows\\CurrentVersion\\Run";
 
+/// A composed example: a `(description, sql)` pair that combines two or more of
+/// the worker's own objects in one query. Each is defined once here and
+/// referenced from the schema list and from the example list of the object that
+/// drives it, so the copies cannot drift.
+pub struct ComposedExample {
+    pub description: &'static str,
+    pub sql: String,
+}
+
+/// `read_hive` joined to the `forensic_keys` reference view: label every live
+/// value of the demo hive that sits under a well-known forensic key with that
+/// key's ATT&CK technique. On the demo hive this is the five Run-key values.
+pub fn persistence_join_example() -> ComposedExample {
+    let demo = demo_hive_blob_sql();
+    ComposedExample {
+        description: "Join a hive scan to the forensic_keys reference to label every live value \
+                      sitting under a well-known forensic key with its ATT&CK technique (here: \
+                      the five Run-key values, T1547.001).",
+        sql: format!(
+            "SELECT f.mitre_technique, r.key_path, r.value_name, r.value_type, r.value_data \
+             FROM reghive.main.read_hive({demo}) AS r \
+             JOIN reghive.main.forensic_keys AS f ON r.key_path = f.key_path \
+             WHERE NOT r.is_deleted ORDER BY r.value_name"
+        ),
+    }
+}
+
+/// `key_info` evaluated for every SOFTWARE-hive row of `forensic_keys`: a
+/// coverage report saying which reference keys the hive actually has, with
+/// their value count and last-write time, without materializing any values.
+pub fn key_coverage_example() -> ComposedExample {
+    let demo = demo_hive_blob_sql();
+    ComposedExample {
+        description: "Coverage check: probe every SOFTWARE-hive key from the forensic_keys \
+                      reference with key_info, reporting which ones the hive contains plus their \
+                      value count and last-write time (only the Run key is present here).",
+        sql: format!(
+            "SELECT k.key_path, k.info IS NOT NULL AS present, k.info.value_count AS value_count, \
+             k.info.last_write AS last_write \
+             FROM (SELECT f.key_path, reghive.main.key_info({demo}, f.key_path) AS info \
+             FROM reghive.main.forensic_keys AS f WHERE f.hive = 'SOFTWARE') AS k \
+             ORDER BY k.key_path"
+        ),
+    }
+}
+
+/// `well_formed` + `hive_info` over one blob: the two header probes an analyst
+/// runs before trusting a hive — is it a valid regf file, which hive is it, and
+/// does it need transaction-log replay?
+pub fn header_triage_example() -> ComposedExample {
+    let demo = demo_hive_blob_sql();
+    ComposedExample {
+        description: "Header triage in one pass: validate a hive with well_formed, then read its \
+                      type and dirty flag from hive_info to decide whether it needs \
+                      transaction-log replay (the demo SOFTWARE hive is valid and clean).",
+        sql: format!(
+            "WITH h AS (SELECT {demo} AS b) \
+             SELECT (reghive.main.well_formed(b)).ok AS ok, \
+             (reghive.main.well_formed(b)).kind AS kind, \
+             (reghive.main.hive_info(b)).hive_type AS hive_type, \
+             (reghive.main.hive_info(b)).is_dirty AS needs_log_replay \
+             FROM h ORDER BY hive_type"
+        ),
+    }
+}
+
 /// A curated reference of well-known Windows Registry forensic locations, exposed
 /// as a VALUES-backed [`CatView`]. Browsable with a plain scan (no file, no
 /// credential); an analyst reads it to learn *which* key paths to pull from a
@@ -112,19 +178,20 @@ SELECT * FROM (VALUES \
     // facets stay a small shared set rather than unique per object.
     tags.push(("domain".to_string(), "security-and-forensics".to_string()));
     tags.push(("topic".to_string(), "dfir-triage".to_string()));
+    let join = persistence_join_example();
     tags.push((
         "vgi.example_queries".to_string(),
-        r#"[
-  {
-    "description": "List the persistence-related registry keys to triage first, with their ATT&CK technique.",
-    "sql": "SELECT key_path, description, mitre_technique FROM reghive.main.forensic_keys WHERE category = 'Persistence' ORDER BY key_path"
-  },
-  {
-    "description": "Count the well-known forensic keys grouped by triage category.",
-    "sql": "SELECT category, count(*) AS n FROM reghive.main.forensic_keys GROUP BY category ORDER BY n DESC, category"
-  }
-]"#
-        .to_string(),
+        crate::meta::example_queries_json(&[
+            (
+                "List the persistence-related registry keys to triage first, with their ATT&CK technique.",
+                "SELECT key_path, description, mitre_technique FROM reghive.main.forensic_keys WHERE category = 'Persistence' ORDER BY key_path",
+            ),
+            (
+                "Count the well-known forensic keys grouped by triage category.",
+                "SELECT category, count(*) AS n FROM reghive.main.forensic_keys GROUP BY category ORDER BY n DESC, category",
+            ),
+            (join.description, join.sql.as_str()),
+        ]),
     ));
 
     CatView {

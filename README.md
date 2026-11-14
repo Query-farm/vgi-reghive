@@ -105,6 +105,15 @@ FROM read_blob('/cases/4421/host7/SYSTEM');
 SELECT * FROM reghive.main.hive_subtree(unhex('...regf bytes...'), 'ControlSet001\Services');
 SELECT reghive.main.hive_key(content, 'ControlSet001\Services\Schedule') AS svc
 FROM read_blob('SYSTEM');
+-- 6. Combine the scalars with the built-in forensic_keys reference: which
+--    well-known SOFTWARE-hive keys does each collected hive contain, and when
+--    were they last written? (key_info reads no values, so this stays cheap.)
+SELECT b.filename, f.key_path, f.mitre_technique,
+       (key_info(b.content, f.key_path)).last_write AS last_write
+FROM read_blob('/cases/4421/*/SOFTWARE') AS b
+CROSS JOIN forensic_keys AS f
+WHERE f.hive = 'SOFTWARE' AND key_info(b.content, f.key_path) IS NOT NULL
+ORDER BY b.filename, f.key_path;
 ```
 
 > **Note on `read_blob` and the cloud.** Cloud hives (`s3://`, `https://`) are
@@ -131,7 +140,6 @@ FROM read_blob('SYSTEM');
 | `hive_info(blob)` | scalar | `STRUCT(hive_type, major, minor, root_path, primary_seq, secondary_seq, is_dirty, last_written)` |
 | `well_formed(blob)` | scalar | `STRUCT(ok, hive_type, error, kind)` — **never panics** |
 | `logs_applied(blob, log1, log2)` | scalar | `STRUCT(applied, entries_replayed, dirty_pages, became_clean, log_format)` |
-| `reghive_version()` | scalar | `VARCHAR` |
 
 `read_hive` / `hive_subtree` named options: `apply_logs` (replay sibling
 `.LOG1`/`.LOG2`, default `true`), `recover_deleted` (scan unallocated cells,

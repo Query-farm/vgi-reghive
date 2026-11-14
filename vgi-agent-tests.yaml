@@ -4,8 +4,9 @@
 # (catalog_metadata() in crates/reghive-worker/src/lib.rs); the answers live
 # here, keyed by task name, so the agent being graded never sees them (VGI416).
 # vgi-lint discovers this file in the repo root. Every reference is
-# deterministic (inline BLOBs or the built-in forensic_keys view), so the suite
-# needs no network access or hive files.
+# deterministic (inline BLOBs, the built-in forensic_keys view, or the committed
+# fixture tests/hives/software.hve, resolved relative to the repo root where
+# vgi-lint runs), so the suite needs no network access.
 
 tasks:
   - name: "validate_non_hive"
@@ -26,6 +27,21 @@ tasks:
     ignore_column_names: true
   - name: "reference_key_for_run"
     reference_sql: "SELECT mitre_technique FROM reghive.main.forensic_keys WHERE key_path = 'Software\\Microsoft\\Windows\\CurrentVersion\\Run'"
+    unordered: true
+    ignore_column_names: true
+  # Composed: read_hive joined to the forensic_keys reference view. The demo
+  # hive's Run key holds five live values (T1547.001); counting keys instead of
+  # values (1), counting every value in the hive (7), or matching by prefix so
+  # the parent keys also qualify gives a different answer.
+  - name: "persistence_values_by_technique"
+    reference_sql: "SELECT f.mitre_technique, count(*) AS n FROM reghive.main.read_hive('tests/hives/software.hve') AS r JOIN reghive.main.forensic_keys AS f ON r.key_path = f.key_path WHERE f.category = 'Persistence' AND NOT r.is_deleted GROUP BY f.mitre_technique ORDER BY f.mitre_technique"
+    unordered: true
+    ignore_column_names: true
+  # Composed: key_info (or a keys-mode read_hive anti-join) over the SOFTWARE
+  # rows of forensic_keys. Only the Run key exists in the fixture, so exactly
+  # RunOnce, Winlogon and Uninstall are missing.
+  - name: "missing_software_reference_keys"
+    reference_sql: "SELECT f.key_path FROM reghive.main.forensic_keys AS f, read_blob('tests/hives/software.hve') AS b WHERE f.hive = 'SOFTWARE' AND reghive.main.key_info(b.content, f.key_path) IS NULL ORDER BY f.key_path"
     unordered: true
     ignore_column_names: true
   - name: "read_hive_non_hive_empty"

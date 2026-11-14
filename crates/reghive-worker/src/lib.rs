@@ -50,10 +50,13 @@ fn catalog_metadata(name: &str) -> CatalogModel {
     // hive inlined as a BLOB literal (so they bind AND run under
     // `vgi-lint --execute`), plus a browse of the reference view. Each carries a
     // description (VGI515) and projects columns rather than `SELECT *` (VGI514).
-    // VGI417: the whole tag must stay under 4,000 characters, and the inline hive
-    // costs ~2,700, so only one hive-backed example fits here; the hive_info probe
-    // is shown in that function's own examples.
+    // VGI417: a vgi.example_queries tag must stay under 8,000 characters and the
+    // inline hive costs ~2,600 per example, so only two hive-backed examples fit
+    // here: the plain scan and the read_hive x forensic_keys join. The other
+    // composed examples (key_info coverage, header triage) live on the example
+    // lists of the functions that drive them.
     let demo = sample::demo_hive_blob_sql();
+    let persistence_join = sample::persistence_join_example();
     let read_hive_ex = format!(
         "SELECT key_path, value_name, value_data \
          FROM reghive.main.read_hive({demo}) \
@@ -70,6 +73,7 @@ fn catalog_metadata(name: &str) -> CatalogModel {
             "Browse the well-known persistence keys to triage first, with their ATT&CK technique.",
             forensic_ex,
         ),
+        (persistence_join.description, persistence_join.sql.as_str()),
     ]);
 
     CatalogModel {
@@ -178,6 +182,25 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                     // Exercise the parsers' robustness contract: non-registry input
                     // must yield an empty/NULL result, never an error. Each task
                     // references a distinct object so every function is covered.
+                    // Composed tasks over the committed SOFTWARE fixture (the
+                    // same bytes as the inline demo hive in the examples): the
+                    // agent must combine a hive reader with the reference view.
+                    meta::AgentTask {
+                        name: "persistence_values_by_technique",
+                        prompt: "Scan the registry hive file tests/hives/software.hve and match \
+                                 its live (not deleted) values against the worker's reference \
+                                 list of well-known forensic registry keys. For the keys in the \
+                                 'Persistence' category, how many live values does the hive hold \
+                                 per MITRE ATT&CK technique? Return two columns, mitre_technique \
+                                 and n (the value count), one row per technique.",
+                    },
+                    meta::AgentTask {
+                        name: "missing_software_reference_keys",
+                        prompt: "Which of the worker's reference forensic registry keys that live \
+                                 in the SOFTWARE hive are absent from the hive file \
+                                 tests/hives/software.hve? Return one column named key_path, one \
+                                 row per missing key, ordered by key_path.",
+                    },
                     meta::AgentTask {
                         name: "read_hive_non_hive_empty",
                         prompt: "The bulk hive reader must tolerate non-registry input without \
@@ -311,5 +334,31 @@ fn catalog_metadata(name: &str) -> CatalogModel {
             tables: Vec::new(),
         }],
         ..Default::default()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// VGI417: every published `vgi.example_queries` list stays under vgi-lint's
+    /// 8,000-character bound even with the inline demo hive in composed examples.
+    #[test]
+    fn example_query_lists_fit_vgi417() {
+        let cat = catalog_metadata("reghive");
+        let schema = &cat.schemas[0];
+        let lists = schema
+            .tags
+            .iter()
+            .chain(schema.views.iter().flat_map(|v| v.tags.iter()))
+            .filter(|(k, _)| k == "vgi.example_queries");
+        let mut n = 0;
+        for (_, v) in lists {
+            n += 1;
+            assert!(v.len() < 8_000, "example list is {} chars", v.len());
+            let parsed: serde_json::Value = serde_json::from_str(v).expect("valid JSON");
+            assert!(parsed.as_array().is_some_and(|a| !a.is_empty()));
+        }
+        assert_eq!(n, 2, "schema + forensic_keys view lists");
     }
 }

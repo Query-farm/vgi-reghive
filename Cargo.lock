@@ -1948,6 +1948,7 @@ dependencies = [
  "notatin",
  "proptest",
  "reghive-core",
+ "serde_json",
  "vgi",
  "vgi-rpc",
 ]

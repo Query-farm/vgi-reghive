@@ -1,0 +1,61 @@
+# name: test/sql/composed.test
+# group: [vgi_reghive]
+#
+# Composed queries that combine the worker's own objects: read_hive joined to
+# the forensic_keys reference view, key_info probed for every reference key, and
+# the well_formed + hive_info header triage. Mirrors the composed examples
+# published in the catalog metadata (crates/reghive-worker/src/sample.rs).
+
+require-env VGI_REGHIVE_WORKER
+
+require-env VGI_REGHIVE_FIXTURES
+
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'reghive' AS reghive (TYPE vgi, LOCATION '${VGI_REGHIVE_WORKER}');
+
+# read_hive x forensic_keys: the five live Run-key values carry T1547.001; the
+# recovered deleted Trace value never matches a reference key.
+query TTT
+SELECT f.mitre_technique, r.value_name, r.value_type
+FROM reghive.main.read_hive('${VGI_REGHIVE_FIXTURES}/software.hve') AS r
+JOIN reghive.main.forensic_keys AS f ON r.key_path = f.key_path
+WHERE NOT r.is_deleted
+ORDER BY r.value_name;
+----
+T1547.001	Big	REG_QWORD
+T1547.001	Blob	REG_BINARY
+T1547.001	List	REG_MULTI_SZ
+T1547.001	Start	REG_DWORD
+T1547.001	Updater	REG_SZ
+
+# key_info over every SOFTWARE reference key: only Run is present (5 values).
+query TTI
+SELECT k.key_path, k.info IS NOT NULL, k.info.value_count
+FROM (SELECT f.key_path, reghive.main.key_info(b.content, f.key_path) AS info
+      FROM reghive.main.forensic_keys AS f, read_blob('${VGI_REGHIVE_FIXTURES}/software.hve') AS b
+      WHERE f.hive = 'SOFTWARE') AS k
+ORDER BY k.key_path;
+----
+Software\Microsoft\Windows NT\CurrentVersion\Winlogon	false	NULL
+Software\Microsoft\Windows\CurrentVersion\Run	true	5
+Software\Microsoft\Windows\CurrentVersion\RunOnce	false	NULL
+Software\Microsoft\Windows\CurrentVersion\Uninstall	false	NULL
+
+# well_formed + hive_info header triage across every fixture.
+query TTTTT
+SELECT parse_filename(filename),
+       (reghive.main.well_formed(content)).ok,
+       (reghive.main.well_formed(content)).kind,
+       (reghive.main.hive_info(content)).hive_type,
+       (reghive.main.hive_info(content)).is_dirty
+FROM read_blob('${VGI_REGHIVE_FIXTURES}/*')
+ORDER BY 1;
+----
+garbage.bin	false	bad-signature	NULL	NULL
+sam.hve	true	ok	SAM	false
+software.hve	true	ok	SOFTWARE	false
+system_clean.hve	true	ok	SYSTEM	false
+system_dirty.hve	true	ok	SYSTEM	true
