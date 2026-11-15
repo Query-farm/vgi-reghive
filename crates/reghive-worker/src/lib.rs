@@ -106,13 +106,17 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                 "vgi.doc_llm".to_string(),
                 "Parse offline Windows Registry hive files (the regf format used by SYSTEM, \
                  SOFTWARE, NTUSER.DAT, SAM, SECURITY, UsrClass.dat, AmCache.hve) into typed \
-                 key/value rows for digital forensics. Read a directory of collected hives with \
-                 read_hive(glob) or a single hive `BLOB`; pull a subtree with hive_subtree, a key \
-                 with hive_key, or a value with hive_value; probe the header with hive_info / \
-                 well_formed; and inspect transaction-log replay with logs_applied. Supports \
-                 .LOG1/.LOG2 transaction-log replay of dirty hives and deleted-cell recovery from \
-                 unallocated space. Use for fleet-scale registry triage joined to IOC/CVE/YARA \
-                 feeds."
+                 key/value rows for digital forensics, using the notatin parser \
+                 (https://github.com/strozfriedberg/notatin). Work at two scales: point it at a \
+                 directory glob of collected hives for bulk triage, or hand it a single hive \
+                 `BLOB` to pull one subtree, key, or value, probe the base-block header, or check \
+                 that the bytes are a well-formed hive. Dirty hives are replayed from their \
+                 .LOG1/.LOG2 transaction logs, and deleted keys/values are recovered from \
+                 unallocated space and flagged. Each value comes back as a coerced string plus \
+                 lossless raw bytes, with per-key last-write timestamps. SAM/SECURITY bytes are \
+                 exposed raw but credentials are never decoded. A browsable reference of \
+                 well-known forensic key paths shows what to triage first. Use for fleet-scale \
+                 registry triage joined to IOC/CVE/YARA feeds."
                     .to_string(),
             ),
             (
@@ -295,10 +299,12 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                 ("topic".to_string(), "dfir-triage".to_string()),
                 (
                     "vgi.doc_llm".to_string(),
-                    "Registry-hive parsing functions for DFIR: scan hives into key/value rows \
-                     (read_hive / hive_subtree), pull a single key/value (hive_key / hive_value), \
-                     probe metadata and validity (key_info / hive_info / well_formed), and inspect \
-                     transaction-log replay (logs_applied)."
+                    "Registry-hive parsing for DFIR, grouped by kind of work: bulk-scan whole \
+                     hives or subtrees into key/value rows, pull a single key, value, or key's \
+                     metadata without walking the tree, read the header and confirm a hive is \
+                     well-formed, and report on .LOG1/.LOG2 transaction-log replay. Reads are \
+                     offline and best-effort: dirty hives still parse and deleted cells are \
+                     recovered and labelled."
                         .to_string(),
                 ),
                 (
