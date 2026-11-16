@@ -5,6 +5,11 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.2 (2026-11-16)
+
+- Bump the vgi Rust SDK to 0.51.1.
+- CI: a release reuses the passing CI run of its commit; container images build on release tags only.
+
 ## [0.4.1]
 
 ### Changed
