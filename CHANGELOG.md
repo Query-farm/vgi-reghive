@@ -5,6 +5,11 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.0 (2026-11-25)
+
+- VGI protocol 3.4: `vgi` 0.53.2, `vgi-rpc` 0.33.1 (Orchard hosted mode; `blob-vendor` on the native build). Requires the 3.4 community `vgi` extension (haybarn 2.0.1).
+- SQL tests run on haybarn-unittest 2.0.1rc3. Dockerfile HEALTHCHECK probes `HEAD /health` (hosted mode answers anonymous GET with 401).
+
 ## 0.4.2 (2026-11-16)
 
 - Bump the vgi Rust SDK to 0.51.1.
@@ -33,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Port to VGI protocol 3.3 (vgi 0.51.0, vgi-rpc 0.32.4). Requires the current
+- Port to VGI protocol 3.4 (vgi 0.53.2, vgi-rpc 0.32.4). Requires the current
   VGI DuckDB extension; 3.2 extensions are incompatible.
 
 ## [0.1.0]
